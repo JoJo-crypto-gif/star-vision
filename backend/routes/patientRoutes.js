@@ -94,35 +94,59 @@ if (patient.contact) {
       if (eErr) return res.status(400).json({ error: eErr.message });
 
       // 3. Insert findings
-      if (Array.isArray(findings) && findings.length > 0) {
-        const findingsPayload = findings.map((f) => ({
-          exam_id: exam.id,
-          type: f.type,
-          finding: f.finding,
-        }));
-        await supabase.from("examination_findings").insert(findingsPayload);
-      }
+// 3. Insert findings
+if (Array.isArray(findings) && findings.length > 0) {
+  const findingsPayload = findings.map((f) => ({
+    exam_id: exam.id,
+    type: f.type,
+    finding: f.finding,
+  }));
+  const { data: findingsData, error: fErr } = await supabase
+    .from("examination_findings")
+    .insert(findingsPayload)
+    .select(); // It's good practice to select() to get the inserted data back
 
-      // 4. Insert diagnoses
-      if (Array.isArray(diagnoses) && diagnoses.length > 0) {
-        const diagPayload = diagnoses.map((d) => ({
-          exam_id: exam.id,
-          diagnosis: d.diagnosis,
-          plan: d.plan ?? "",
-        }));
-        await supabase.from("diagnoses").insert(diagPayload);
-      }
+  if (fErr) {
+    console.error("Error inserting findings:", fErr.message);
+    // You could choose to return an error here, but for this specific
+    // use case, simply logging it is probably fine.
+  }
+}
 
-      // 5. Insert payments
-      if (Array.isArray(payments) && payments.length > 0) {
-        const paymentPayload = payments.map((p) => ({
-          patient_id: patient.id,
-          item: p.item,
-          amount: p.amount,
-          status: p.status ?? "pending",
-        }));
-        await supabase.from("payments").insert(paymentPayload);
-      }
+// 4. Insert diagnoses
+if (Array.isArray(diagnoses) && diagnoses.length > 0) {
+  const diagPayload = diagnoses.map((d) => ({
+    exam_id: exam.id,
+    diagnosis: d.diagnosis,
+    plan: d.plan ?? "",
+    category: d.category ?? null,
+  }));
+  const { data: diagData, error: dErr } = await supabase
+    .from("diagnoses")
+    .insert(diagPayload);
+
+  if (dErr) {
+    console.error("Error inserting diagnoses:", dErr.message);
+  }
+}
+
+// 5. Insert payments
+if (Array.isArray(payments) && payments.length > 0) {
+  const paymentPayload = payments.map((p) => ({
+    patient_id: patient.id,
+    item: p.item,
+    amount: p.amount,
+    status: p.status ?? "pending",
+  }));
+  const { data: paymentData, error: payErr } = await supabase
+    .from("payments")
+    .insert(paymentPayload);
+
+  if (payErr) {
+    console.error("Error inserting payments:", payErr.message);
+  }
+}
+
 
       return res.json({
         message: "Patient registered successfully",

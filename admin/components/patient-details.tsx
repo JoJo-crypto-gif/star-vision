@@ -186,6 +186,7 @@ export function PatientDetails({ patientDetails, onBack }: PatientDetailsProps) 
               diagnoses.map((diagnosis: any, index: number) => (
                 <div key={index} className="space-y-1">
                   <p className="font-medium">{diagnosis.diagnosis}</p>
+                  <p className="text-sm text-muted-foreground">Categoty: {diagnosis.category}</p>
                   <p className="text-sm text-muted-foreground">Plan: {diagnosis.plan}</p>
                 </div>
               ))

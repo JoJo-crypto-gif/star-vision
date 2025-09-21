@@ -1,3 +1,5 @@
+// frontend/schema/addPatientSchema.js
+
 import * as z from "zod";
 
 export const addPatientSchema = z.object({
@@ -11,16 +13,12 @@ export const addPatientSchema = z.object({
   profile_picture: z.any().optional(),
 
   // Step 2: Examination Details
-  visual_acuity_left: z.string().optional().or(z.literal("")),   // keep as string if stored as text (like "6/6")
+  visual_acuity_left: z.string().optional().or(z.literal("")),
   visual_acuity_right: z.string().optional().or(z.literal("")),
   
-  // ✅ numeric-only fields
-  pinhole_left: z.string().optional().refine(val => val === "" || !isNaN(Number(val)), {
-    message: "Pinhole (Left) must be a number.",
-  }),
-  pinhole_right: z.string().optional().refine(val => val === "" || !isNaN(Number(val)), {
-    message: "Pinhole (Right) must be a number.",
-  }),
+  // ✅ Pinhole fields now accept strings
+  pinhole_left: z.string().optional().or(z.literal("")),
+  pinhole_right: z.string().optional().or(z.literal("")),
 
   auto_refraction_left_sphere: z.string().optional().refine(val => val === "" || !isNaN(Number(val)), {
     message: "Left Sphere must be a number.",
@@ -54,6 +52,7 @@ export const addPatientSchema = z.object({
   diagnoses: z.array(z.object({
     diagnosis: z.string().nonempty({ message: "Diagnosis is required." }),
     plan: z.string().optional().or(z.literal("")),
+    category: z.string().optional().or(z.literal("")),
   })).optional(),
 
   // Step 5: Payments

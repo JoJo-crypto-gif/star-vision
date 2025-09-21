@@ -21,7 +21,7 @@ export function AddDiagnosesForm() {
     <Card>
       <CardHeader>
         <CardTitle>Diagnoses</CardTitle>
-        <CardDescription>Add the patient's diagnoses and treatment plans.</CardDescription>
+        <CardDescription>Add the patient's diagnoses, categories, and treatment plans.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {fields.length === 0 && (
@@ -30,6 +30,8 @@ export function AddDiagnosesForm() {
         {fields.map((item, index) => (
           <div key={item.id} className="relative p-4 border rounded-md">
             <h4 className="text-md font-semibold mb-2">Diagnosis {index + 1}</h4>
+
+            {/* Diagnosis */}
             <div className="grid gap-2 mb-2">
               <Label htmlFor={`diagnoses[${index}].diagnosis`}>Diagnosis</Label>
               <Controller
@@ -41,6 +43,28 @@ export function AddDiagnosesForm() {
                 <p className="text-sm text-destructive">{errors.diagnoses[index].diagnosis.message as string}</p>
               )}
             </div>
+
+            {/* Category */}
+            <div className="grid gap-2 mb-2">
+              <Label htmlFor={`diagnoses[${index}].category`}>Category</Label>
+              <Controller
+                name={`diagnoses.${index}.category`}
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id={`diagnoses[${index}].category`}
+                    list="diagnosisCategories"
+                    placeholder="Select or type category"
+                    {...field}
+                  />
+                )}
+              />
+              {errors.diagnoses?.[index]?.category && (
+                <p className="text-sm text-destructive">{errors.diagnoses[index].category.message as string}</p>
+              )}
+            </div>
+
+            {/* Treatment Plan */}
             <div className="grid gap-2">
               <Label htmlFor={`diagnoses[${index}].plan`}>Treatment Plan</Label>
               <Controller
@@ -52,6 +76,8 @@ export function AddDiagnosesForm() {
                 <p className="text-sm text-destructive">{errors.diagnoses[index].plan.message as string}</p>
               )}
             </div>
+
+            {/* Delete Button */}
             <Button
               type="button"
               variant="ghost"
@@ -63,14 +89,25 @@ export function AddDiagnosesForm() {
             </Button>
           </div>
         ))}
+
+        {/* Add Diagnosis Button */}
         <Button
           type="button"
           variant="outline"
           className="w-full"
-          onClick={() => append({ diagnosis: "", plan: "" })}
+          onClick={() => append({ diagnosis: "", category: "", plan: "" })}
         >
           <PlusCircle className="h-4 w-4 mr-2" /> Add Diagnosis
         </Button>
+
+        {/* Shared Categories */}
+        <datalist id="diagnosisCategories">
+          <option value="Refractive Error" />
+          <option value="Glaucoma" />
+          <option value="Cataract" />
+          <option value="Infection" />
+          <option value="Other" />
+        </datalist>
       </CardContent>
     </Card>
   );

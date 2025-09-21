@@ -75,7 +75,7 @@ export function LoginForm() {
             className="object-cover opacity-80"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent flex flex-col justify-center px-12">
-            <h1 className="text-4xl font-bold text-amber-400 mb-4">START VISION SOLUTIONS</h1>
+            <h1 className="text-4xl font-bold text-amber-400 mb-4">STAR EYE SOLUTIONS</h1>
             <p className="text-xl text-white max-w-md">
               Manage your bookings and ushers with our comprehensive dashboard solution.
             </p>
