@@ -15,8 +15,7 @@ export const addPatientSchema = z.object({
   // Step 2: Examination Details
   visual_acuity_left: z.string().optional().or(z.literal("")),
   visual_acuity_right: z.string().optional().or(z.literal("")),
-  
-  // ✅ Pinhole fields now accept strings
+
   pinhole_left: z.string().optional().or(z.literal("")),
   pinhole_right: z.string().optional().or(z.literal("")),
 
@@ -63,4 +62,8 @@ export const addPatientSchema = z.object({
       .refine(val => !isNaN(val) && val > 0, { message: "Amount must be a positive number." }),
     status: z.string().optional().or(z.literal("")),
   })).optional(),
+
+  //step 6: Referrals
+  clinicId: z.string().optional().or(z.literal("")),
+  remark: z.string().optional().or(z.literal("")),
 });

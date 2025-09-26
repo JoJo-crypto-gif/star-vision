@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import userRoutes from "./routes/userRoutes.js";
 import patientRoutes from "./routes/patientRoutes.js";
+import referralRoutes from './routes/referralRoutes.js';
 
 dotenv.config();
 console.log("🔑 Loaded ENV:", {
@@ -42,7 +43,11 @@ app.get("/", (req, res) => {
 // pass supabase into user routes
 app.use("/users", userRoutes(supabase, supabaseAdmin));
 app.use("/patients", patientRoutes(supabase, supabaseAdmin));
+app.use('/referrals', referralRoutes(supabase, supabaseAdmin));
 
-app.listen(process.env.PORT, () => {
-  console.log(`Server running at http://localhost:${process.env.PORT}`);
+
+const PORT = process.env.PORT || 5050;
+console.log(`PORT from env:`, process.env.PORT)
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
 });

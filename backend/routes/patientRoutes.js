@@ -18,6 +18,7 @@ const patientRoutes = (supabase, supabaseAdmin) => {
       guarantor_contact,
       profile_picture,
       appointment_date,
+      appointment_for,
 
       // exam
       visual_acuity_left,
@@ -33,14 +34,21 @@ const patientRoutes = (supabase, supabaseAdmin) => {
       chief_complaint,
 
       // findings & diagnoses
-      findings,   // [{ type, finding }]
-      diagnoses,  // [{ diagnosis, plan }]
+      findings,
+      diagnoses,
 
       // payments
-      payments    // [{ item, amount, status }]
+      payments
     } = req.body;
 
     const staff_id = req.user.id;
+
+    if (appointment_date) {
+      const date = new Date(appointment_date);
+      if (isNaN(date.getTime())) {
+        return res.status(400).json({ error: "Invalid appointment_date format. Please use a valid date string." });
+      }
+    }
 
     try {
       // 1. Create patient
@@ -55,6 +63,7 @@ const patientRoutes = (supabase, supabaseAdmin) => {
           guarantor_contact,
           profile_picture,
           appointment_date,
+          appointment_for, // ✅ Added
           staff_id,
         }])
         .select()
@@ -62,13 +71,12 @@ const patientRoutes = (supabase, supabaseAdmin) => {
 
       if (pErr) return res.status(400).json({ error: pErr.message });
       // send WhatsApp thank you message
-if (patient.contact) {
-  // Make sure contact is in full international format, e.g. 233XXXXXXXXX
-  sendWhatsAppMessage(patient.contact, "hello_world")
-    .then(() => console.log("✅ WhatsApp message sent"))
-    .catch((err) => console.error("❌ WhatsApp error:", err));
-}
-
+      if (patient.contact) {
+        // Make sure contact is in full international format, e.g. 233XXXXXXXXX
+        sendWhatsAppMessage(patient.contact, "hello_world")
+          .then(() => console.log("✅ WhatsApp message sent"))
+          .catch((err) => console.error("❌ WhatsApp error:", err));
+      }
 
       // 2. Create exam
       const { data: exam, error: eErr } = await supabase
@@ -94,59 +102,55 @@ if (patient.contact) {
       if (eErr) return res.status(400).json({ error: eErr.message });
 
       // 3. Insert findings
-// 3. Insert findings
-if (Array.isArray(findings) && findings.length > 0) {
-  const findingsPayload = findings.map((f) => ({
-    exam_id: exam.id,
-    type: f.type,
-    finding: f.finding,
-  }));
-  const { data: findingsData, error: fErr } = await supabase
-    .from("examination_findings")
-    .insert(findingsPayload)
-    .select(); // It's good practice to select() to get the inserted data back
+      if (Array.isArray(findings) && findings.length > 0) {
+        const findingsPayload = findings.map((f) => ({
+          exam_id: exam.id,
+          type: f.type,
+          finding: f.finding,
+        }));
+        const { data: findingsData, error: fErr } = await supabase
+          .from("examination_findings")
+          .insert(findingsPayload)
+          .select();
 
-  if (fErr) {
-    console.error("Error inserting findings:", fErr.message);
-    // You could choose to return an error here, but for this specific
-    // use case, simply logging it is probably fine.
-  }
-}
+        if (fErr) {
+          console.error("Error inserting findings:", fErr.message);
+        }
+      }
 
-// 4. Insert diagnoses
-if (Array.isArray(diagnoses) && diagnoses.length > 0) {
-  const diagPayload = diagnoses.map((d) => ({
-    exam_id: exam.id,
-    diagnosis: d.diagnosis,
-    plan: d.plan ?? "",
-    category: d.category ?? null,
-  }));
-  const { data: diagData, error: dErr } = await supabase
-    .from("diagnoses")
-    .insert(diagPayload);
+      // 4. Insert diagnoses
+      if (Array.isArray(diagnoses) && diagnoses.length > 0) {
+        const diagPayload = diagnoses.map((d) => ({
+          exam_id: exam.id,
+          diagnosis: d.diagnosis,
+          plan: d.plan ?? "",
+          category: d.category ?? null,
+        }));
+        const { data: diagData, error: dErr } = await supabase
+          .from("diagnoses")
+          .insert(diagPayload);
 
-  if (dErr) {
-    console.error("Error inserting diagnoses:", dErr.message);
-  }
-}
+        if (dErr) {
+          console.error("Error inserting diagnoses:", dErr.message);
+        }
+      }
 
-// 5. Insert payments
-if (Array.isArray(payments) && payments.length > 0) {
-  const paymentPayload = payments.map((p) => ({
-    patient_id: patient.id,
-    item: p.item,
-    amount: p.amount,
-    status: p.status ?? "pending",
-  }));
-  const { data: paymentData, error: payErr } = await supabase
-    .from("payments")
-    .insert(paymentPayload);
+      // 5. Insert payments
+      if (Array.isArray(payments) && payments.length > 0) {
+        const paymentPayload = payments.map((p) => ({
+          patient_id: patient.id,
+          item: p.item,
+          amount: p.amount,
+          status: p.status ?? "pending",
+        }));
+        const { data: paymentData, error: payErr } = await supabase
+          .from("payments")
+          .insert(paymentPayload);
 
-  if (payErr) {
-    console.error("Error inserting payments:", payErr.message);
-  }
-}
-
+        if (payErr) {
+          console.error("Error inserting payments:", payErr.message);
+        }
+      }
 
       return res.json({
         message: "Patient registered successfully",
@@ -166,7 +170,7 @@ if (Array.isArray(payments) && payments.length > 0) {
     try {
       const { data, error } = await supabase
         .from("patients")
-        .select("id, name, contact, gender, venue, appointment_date, created_at");
+        .select("id, name, contact, gender, venue, appointment_date, appointment_for, created_at"); // ✅ Added
 
       if (error) return res.status(400).json({ error: error.message });
 
@@ -175,8 +179,6 @@ if (Array.isArray(payments) && payments.length > 0) {
       return res.status(500).json({ error: err.message });
     }
   });
-
-    
     
   /**
    * GET /patients/:id
@@ -189,7 +191,7 @@ if (Array.isArray(payments) && payments.length > 0) {
       // 1. Patient info with staff details
  const { data: patient, error: pErr } = await supabase
   .from("patients")
-  .select("*, staff:staff_id(id,name,phone,role)")
+  .select("*, staff:staff_id(id,name,phone,role)") // The wildcard `*` will include appointment_for
   .eq("id", id)
   .single();
 

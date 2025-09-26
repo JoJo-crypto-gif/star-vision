@@ -99,6 +99,36 @@ export function AddFindingsForm() {
             </p>
           )}
         </div>
+
+        {/* ✅ New: Appointment For Section */}
+<div className="grid gap-2">
+  <Label htmlFor="appointment_for">Appointment For (optional)</Label>
+  <Controller
+    name="appointment_for"
+    control={control}
+    render={({ field }) => (
+      <>
+        <Input
+          list="appointment-for-options"
+          id="appointment_for"
+          placeholder="e.g. Routine Checkup"
+          {...field}
+        />
+        <datalist id="appointment-for-options">
+          <option value="Routine Checkup" />
+          <option value="Follow-up Consultation" />
+          <option value="Surgical Evaluation" />
+          <option value="New Patient" />
+        </datalist>
+      </>
+    )}
+  />
+  {errors.appointment_for && (
+    <p className="text-sm text-destructive">
+      {errors.appointment_for.message as string}
+    </p>
+  )}
+</div>
       </CardContent>
     </Card>
   );

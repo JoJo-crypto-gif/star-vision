@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Calendar, Clock, LayoutDashboard, LogOut, Menu, Plus, Search, Settings, Users } from "lucide-react";
+import { Calendar, Clock, LayoutDashboard, LogOut, Menu, Plus, Search, Settings, Users, Hospital } from "lucide-react";
 import { useRouter } from "next/navigation"; 
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,6 +15,8 @@ import { CalendarView } from "@/components/calendar-view";
 import { AddStaffForm } from "@/components/add-staff-form";
 import { StaffTable } from "@/components/staff-table";
 import { PatientDetails } from "@/components/patient-details"; 
+import { AddClinicForm } from "@/components/add-clinic-form";
+import { ClinicsTable } from "@/components/clinic-table";
 import {
   Sidebar,
   SidebarContent,
@@ -93,7 +95,7 @@ export function AdminDashboard() {
       }
 
       try {
-        const response = await fetch("http://localhost:5000/users/staff-count", {
+        const response = await fetch("http://localhost:5050/users/staff-count", {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -119,7 +121,7 @@ export function AdminDashboard() {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:5000/patients", {
+      const response = await fetch("http://localhost:5050/patients", {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -151,7 +153,7 @@ export function AdminDashboard() {
   const fetchPatientDetails = async (id: string, token: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/patients/${id}`, {
+      const response = await fetch(`http://localhost:5050/patients/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -232,6 +234,12 @@ export function AdminDashboard() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => setActiveTab("clinics")}  className="mb-5 text-md">
+                  <Hospital className="h-5 w-5" />
+                  <span>Referral Clinics</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
                 <SidebarMenuButton className="mb-5 text-md">
                   <Settings className="h-5 w-5" />
                   <span>Settings</span>
@@ -284,6 +292,10 @@ export function AdminDashboard() {
                   <Users className="mr-2 h-5 w-5" />
                   Staff
                 </Button>
+                <Button variant="ghost" className="justify-start" onClick={() => setActiveTab("clinics")}>
+                  <Hospital className="mr-2 h-5 w-5" />
+                  Clinics
+                </Button>
                 <Button variant="ghost" className="justify-start">
                   <Settings className="mr-2 h-5 w-5" />
                   Settings
@@ -330,10 +342,11 @@ export function AdminDashboard() {
           <main className="flex-1 p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               {/* 🚨 UPDATED: TabsList to not show the "Details" tab unless a patient is selected */}
-              <TabsList className="grid w-full max-w-md grid-cols-4">
+              <TabsList className="grid w-full max-w-md grid-cols-5">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="calendar">Calendar</TabsTrigger>
                 <TabsTrigger value="staff">Staff</TabsTrigger>
+                <TabsTrigger value="clinics">Clinics</TabsTrigger>
                 <TabsTrigger value="details" disabled={!selectedPatientId}>
                   Details
                 </TabsTrigger>
@@ -458,6 +471,21 @@ export function AdminDashboard() {
                     </Card>
                 </div>
               </TabsContent>
+
+            <TabsContent value="clinics" className="space-y-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Card className="col-span-1">
+                <CardContent className="pt-6">
+                  <AddClinicForm />
+                </CardContent>
+              </Card>
+              <Card className="col-span-2">
+                <CardContent className="pt-6">
+                  <ClinicsTable />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
               <TabsContent value="details">
                 {selectedPatientId && patientDetails ? (
