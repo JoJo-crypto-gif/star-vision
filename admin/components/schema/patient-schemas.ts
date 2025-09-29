@@ -58,10 +58,12 @@ export const addPatientSchema = z.object({
   payments: z.array(z.object({
     item: z.string().nonempty({ message: "Item is required." }),
     amount: z.string()
-      .transform(val => Number(val))
-      .refine(val => !isNaN(val) && val > 0, { message: "Amount must be a positive number." }),
+      .refine(val => val === "" || (!isNaN(Number(val)) && Number(val) > 0), {
+      message: "Amount must be a positive number."
+      }),
     status: z.string().optional().or(z.literal("")),
   })).optional(),
+
 
   //step 6: Referrals
   clinicId: z.string().optional().or(z.literal("")),

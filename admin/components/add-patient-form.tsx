@@ -110,91 +110,92 @@ export function AddPatientForm() {
     }
   };
 
-  // Final submit
-  const onSubmit = async (data: z.infer<typeof addPatientSchema>) => {
-    setIsSubmitting(true);
-    const token = localStorage.getItem("token");
 
-    if (!token) {
-      alert("❌ Authorization Error: Please log in to add a patient.");
-      setIsSubmitting(false);
-      return;
+  // Final submit
+const onSubmit = async (data: z.infer<typeof addPatientSchema>) => {
+  setIsSubmitting(true);
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    alert("❌ Authorization Error: Please log in to add a patient.");
+    setIsSubmitting(false);
+    return;
+  }
+
+  // ✅ Clean optional fields
+  const payload = { ...data };
+  if (!payload.appointment_date) delete payload.appointment_date;
+
+  try {
+    // ✅ Ensure cleaned data is used
+    const { clinicId, remark, ...patientData } = payload;
+
+    // 1. Add patient
+    const patientResponse = await fetch("http://localhost:5050/patients", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(patientData),
+    });
+
+    const patientResult = await patientResponse.json();
+    console.log("Patient add response:", patientResult);
+
+    if (!patientResponse.ok) {
+      throw new Error(
+        patientResult.error || patientResult.message || "Failed to add patient"
+      );
     }
 
-    try {
-      const { clinicId, remark, ...patientData } = data;
+    const patientId = patientResult.patient.id;
 
-      // 1. Add patient
-      const patientResponse = await fetch("http://localhost:5050/patients", {
+    // 2. Add referral (optional)
+    if (clinicId) {
+      const referralPayload = {
+        patient_id: patientId,
+        clinic_id: clinicId,
+        remark: remark || ""
+      };
+
+      const referralResponse = await fetch("http://localhost:5050/referrals", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(patientData),
+        body: JSON.stringify(referralPayload),
       });
 
-      const patientResult = await patientResponse.json();
-      console.log("Patient add response:", patientResult);
+      const referralResult = await referralResponse.json();
+      console.log("Referral add response:", referralResult);
 
-      if (!patientResponse.ok) {
-        throw new Error(
-          patientResult.error ||
-            patientResult.message ||
-            "Failed to add patient"
+      if (!referralResponse.ok) {
+        alert(
+          `⚠️ Referral Failed: Patient added, but referral could not be sent. (${
+            referralResult.error || referralResult.message || "Unknown error"
+          })`
         );
-      }
-
-      const patientId = patientResult.patient.id;
-
-      // 2. Add referral (optional)
-      if (clinicId) {
-        const referralPayload = {
-          patient_id: patientId,
-          clinic_id: clinicId,
-          remark: remark || "",
-        };
-
-        const referralResponse = await fetch(
-          "http://localhost:5050/referrals",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(referralPayload),
-          }
-        );
-
-        const referralResult = await referralResponse.json();
-        console.log("Referral add response:", referralResult);
-
-        if (!referralResponse.ok) {
-          alert(
-            `⚠️ Referral Failed: Patient added, but referral could not be sent. (${
-              referralResult.error ||
-              referralResult.message ||
-              "Unknown error"
-            })`
-          );
-        } else {
-          alert("✅ Patient added and referral sent successfully!");
-        }
       } else {
-        alert("✅ Patient added successfully!");
+        alert("✅ Patient added and referral sent successfully!");
       }
-
-      reset();
-      setStep(0);
-      router.push("/patients");
-    } catch (error: any) {
-      console.error("Submit error:", error);
-      alert(`❌ Error: ${error.message || "Something went wrong."}`);
-    } finally {
-      setIsSubmitting(false);
+    } else {
+      alert("✅ Patient added successfully!");
     }
-  };
+
+    reset();
+    setStep(0);
+    router.push("/staff/add-patient");
+  } catch (error: any) {
+    console.error("Submit error:", error);
+    alert(`❌ Error: ${error.message || "Something went wrong."}`);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+
 
   // Step components
   const stepComponents = [
