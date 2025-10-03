@@ -308,6 +308,153 @@ const patientRoutes = (supabase, supabaseAdmin) => {
     }
   });
 
+  // PUT /patients/:id - Edit patients details
+router.put("/:id", checkStaff(supabaseAdmin), async (req, res) => {
+  const { id } = req.params;
+  const {
+    name,
+    contact,
+    gender,
+    venue,
+    guarantor_name,
+    guarantor_contact,
+    profile_picture,
+    appointment_date,
+    appointment_for,
+  } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from("patients")
+      .update({
+        name,
+        contact,
+        gender,
+        venue,
+        guarantor_name,
+        guarantor_contact,
+        profile_picture,
+        appointment_date: appointment_date || null,
+        appointment_for,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    if (!data) return res.status(404).json({ error: "Patient not found" });
+
+    res.json({ message: "Patient updated", patient: data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /examinations/:id - Edit examination
+router.put("/examinations/:id", checkStaff(supabaseAdmin), async (req, res) => {
+  const { id } = req.params;
+  const {
+    visual_acuity_left,
+    visual_acuity_right,
+    pinhole_left,
+    pinhole_right,
+    auto_refraction_left_sphere,
+    auto_refraction_left_cylinder,
+    auto_refraction_left_axis,
+    auto_refraction_right_sphere,
+    auto_refraction_right_cylinder,
+    auto_refraction_right_axis,
+    chief_complaint
+  } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from("examinations")
+      .update({
+        visual_acuity_left,
+        visual_acuity_right,
+        pinhole_left,
+        pinhole_right,
+        auto_refraction_left_sphere,
+        auto_refraction_left_cylinder,
+        auto_refraction_left_axis,
+        auto_refraction_right_sphere,
+        auto_refraction_right_cylinder,
+        auto_refraction_right_axis,
+        chief_complaint,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    if (!data) return res.status(404).json({ error: "Examination not found" });
+
+    res.json({ message: "Examination updated", exam: data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// PUT /examination_findings/:id - Edit exam findings
+router.put("/examination_findings/:id", checkStaff(supabaseAdmin), async (req, res) => {
+  const { id } = req.params;
+  const { description, eye } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from("examination_findings")
+      .update({
+        description,
+        eye,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    if (!data) return res.status(404).json({ error: "Finding not found" });
+
+    res.json({ message: "Finding updated", finding: data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /diagnoses/:id. - Edit diagnosis
+router.put("/diagnoses/:id", checkStaff(supabaseAdmin), async (req, res) => {
+  const { id } = req.params;
+  const { condition, severity, notes } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from("diagnoses")
+      .update({
+        condition,
+        severity,
+        notes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    if (!data) return res.status(404).json({ error: "Diagnosis not found" });
+
+    res.json({ message: "Diagnosis updated", diagnosis: data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+
   return router;
 };
 

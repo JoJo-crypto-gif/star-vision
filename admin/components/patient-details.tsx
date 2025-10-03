@@ -1,13 +1,24 @@
 "use client";
 
-import { useState } from "react";
 import { ArrowLeft, Calendar, User, Phone, MapPin, Stethoscope, FileText, Wallet, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
-
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import axios from "axios";
+
 
 // 🚨 Define the props interface to match your backend data
 interface PatientDetailsProps {
@@ -40,7 +51,103 @@ interface PatientDetailsProps {
 
 export function PatientDetails({ patientDetails, onBack }: PatientDetailsProps) {
   const { patient, exams, findings, diagnoses, payments } = patientDetails;
-  const latestExam = exams.length > 0 ? exams[0] : null;
+  // const latestExam = exams.length > 0 ? exams[0] : null;
+  const [latestExam, setLatestExam] = useState<any>(exams.length > 0 ? exams[0] : null);
+
+  const [showEditPatient, setShowEditPatient] = useState(false);
+const [form, setForm] = useState({
+  name: patient.name,
+  contact: patient.contact,
+  gender: patient.gender,
+  venue: patient.venue,
+  guarantor_name: patient.guarantor_name,
+  guarantor_contact: patient.guarantor_contact,
+});
+
+const [showEditExam, setShowEditExam] = useState(false);
+const [examForm, setExamForm] = useState({
+  visual_acuity_left: latestExam?.visual_acuity_left || "",
+  visual_acuity_right: latestExam?.visual_acuity_right || "",
+  pinhole_left: latestExam?.pinhole_left || "",
+  pinhole_right: latestExam?.pinhole_right || "",
+  auto_refraction_left_sphere: latestExam?.auto_refraction_left_sphere || "",
+  auto_refraction_left_cylinder: latestExam?.auto_refraction_left_cylinder || "",
+  auto_refraction_left_axis: latestExam?.auto_refraction_left_axis || "",
+  auto_refraction_right_sphere: latestExam?.auto_refraction_right_sphere || "",
+  auto_refraction_right_cylinder: latestExam?.auto_refraction_right_cylinder || "",
+  auto_refraction_right_axis: latestExam?.auto_refraction_right_axis || "",
+  chief_complaint: latestExam?.chief_complaint || "",
+});
+
+useEffect(() => {
+  if (latestExam) {
+    setExamForm({
+      visual_acuity_left: latestExam.visual_acuity_left || "",
+      visual_acuity_right: latestExam.visual_acuity_right || "",
+      pinhole_left: latestExam.pinhole_left || "",
+      pinhole_right: latestExam.pinhole_right || "",
+      auto_refraction_left_sphere: latestExam.auto_refraction_left_sphere || "",
+      auto_refraction_left_cylinder: latestExam.auto_refraction_left_cylinder || "",
+      auto_refraction_left_axis: latestExam.auto_refraction_left_axis || "",
+      auto_refraction_right_sphere: latestExam.auto_refraction_right_sphere || "",
+      auto_refraction_right_cylinder: latestExam.auto_refraction_right_cylinder || "",
+      auto_refraction_right_axis: latestExam.auto_refraction_right_axis || "",
+      chief_complaint: latestExam.chief_complaint || "",
+    });
+  }
+}, [latestExam]); 
+
+const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setForm({ ...form, [e.target.name]: e.target.value });
+};
+const handleUpdatePatient = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    const token = localStorage.getItem("token"); // get your stored JWT
+    if (!token) {
+      alert("You are not logged in");
+      return;
+    }
+    const res = await axios.put(
+      `http://localhost:5050/patients/${patient.id}`,
+      form,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, // ✅ attach token
+        },
+      }
+    );
+    console.log("Update response:", res.data);
+    alert("Patient updated ✅");
+    setShowEditPatient(false);
+  } catch (err: any) {
+    console.error("Update error:", err.response?.data || err.message);
+    alert("Failed to update patient ❌");
+  }
+};
+
+const handleExamChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setExamForm({ ...examForm, [e.target.name]: e.target.value });
+};
+const handleUpdateExam = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.put(
+      `http://localhost:5050/patients/examinations/${latestExam.id}`,
+      examForm,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    alert("Exam updated ✅");
+    setLatestExam(response.data); // 👈 update state with fresh data
+    setShowEditExam(false);
+  } catch (err: any) {
+    console.error("Exam update error:", err.response?.data || err.message);
+    alert("Failed to update exam ❌");
+  }
+};
+
 
   return (
     <div className="space-y-6">
@@ -93,9 +200,9 @@ export function PatientDetails({ patientDetails, onBack }: PatientDetailsProps) 
               <p className="text-sm text-muted-foreground">{patient.guarantor_contact ?? "N/A"}</p>
             </div>
           </CardContent>
-          {/* <CardFooter className="flex justify-end">
-            <Button variant="outline">Edit Patient</Button>
-          </CardFooter> */}
+          <CardFooter className="flex justify-end">
+            <Button variant="outline" onClick={() => setShowEditPatient(true)}>Edit Patient</Button>
+          </CardFooter>
         </Card>
 
         <div className="space-y-6">
@@ -141,11 +248,11 @@ export function PatientDetails({ patientDetails, onBack }: PatientDetailsProps) 
                 </div>
               )}
             </CardContent>
-            {/* <CardFooter>
-              <Button variant="outline" className="w-full">
-                View All Exams
+            <CardFooter className="flex justify-end">
+              <Button variant="outline" onClick={() => setShowEditExam(true)}>
+                Edit Exams
               </Button>
-            </CardFooter> */}
+            </CardFooter>
           </Card>
         </div>
       </div>
@@ -174,6 +281,11 @@ export function PatientDetails({ patientDetails, onBack }: PatientDetailsProps) 
               </div>
             )}
           </CardContent>
+          <CardFooter className="flex justify-end">
+              <Button variant="outline">
+                Edit Findings
+              </Button>
+          </CardFooter>
         </Card>
 
         <Card>
@@ -196,6 +308,11 @@ export function PatientDetails({ patientDetails, onBack }: PatientDetailsProps) 
               </div>
             )}
           </CardContent>
+          <CardFooter className="flex justify-end">
+              <Button variant="outline">
+                Edit Diagnosis
+              </Button>
+          </CardFooter>
         </Card>
       </div>
 
@@ -230,6 +347,107 @@ export function PatientDetails({ patientDetails, onBack }: PatientDetailsProps) 
           <Button variant="outline">Add Payment</Button>
         </CardFooter> */}
       </Card>
+
+<Dialog open={showEditPatient} onOpenChange={setShowEditPatient}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Edit Patient</DialogTitle>
+      <DialogDescription>Update patient personal details.</DialogDescription>
+    </DialogHeader>
+
+    <form onSubmit={handleUpdatePatient} className="space-y-3">
+      <Input
+        name="name"
+        value={form.name}
+        onChange={handleChange}
+        placeholder="Full Name"
+      />
+      <Input
+        name="contact"
+        value={form.contact}
+        onChange={handleChange}
+        placeholder="Contact"
+      />
+      <Input
+        name="gender"
+        value={form.gender}
+        onChange={handleChange}
+        placeholder="Gender"
+      />
+      <Input
+        name="venue"
+        value={form.venue}
+        onChange={handleChange}
+        placeholder="Venue"
+      />
+      <Input
+        name="guarantor_name"
+        value={form.guarantor_name}
+        onChange={handleChange}
+        placeholder="Guarantor Name"
+      />
+      <Input
+        name="guarantor_contact"
+        value={form.guarantor_contact}
+        onChange={handleChange}
+        placeholder="Guarantor Contact"
+      />
+
+      <DialogFooter>
+        <Button type="submit">Save Changes</Button>
+      </DialogFooter>
+    </form>
+  </DialogContent>
+</Dialog>
+
+<Dialog open={showEditExam} onOpenChange={setShowEditExam}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Edit Exam</DialogTitle>
+      <DialogDescription>Update exam details.</DialogDescription>
+    </DialogHeader>
+
+    <form onSubmit={handleUpdateExam} className="space-y-3">
+      <Label htmlFor="visual_acuity_left" className="mt-0">Visual Acuity Left</Label>
+      <Input name="visual_acuity_left" value={examForm.visual_acuity_left} onChange={handleExamChange} className="mb-3"/>
+
+      <Label htmlFor="visual_acuity_right" className="mt-0">Visual Acuity Right</Label>
+      <Input name="visual_acuity_right" value={examForm.visual_acuity_right} onChange={handleExamChange} className="mb-3"/>
+      
+      <Label htmlFor="pinhole_left" className="mt-0">Pinhole Left</Label>
+      <Input name="pinhole_left" value={examForm.pinhole_left} onChange={handleExamChange} className="mb-3"/>
+      
+      <Label htmlFor="pinhole_right" className="mt-0">Pinhole Right</Label>
+      <Input name="pinhole_right" value={examForm.pinhole_right} onChange={handleExamChange} className="mb-3"/>
+      
+      <Label htmlFor="auto_refraction_left_sphere" className="mt-0">Auto Refraction Left SPH</Label>
+      <Input name="auto_refraction_left_sphere" value={examForm.auto_refraction_left_sphere} onChange={handleExamChange} className="mb-3"/>
+
+      <Label htmlFor="auto_refraction_left_cylinder" className="mt-0">Auto Refraction Left CYL</Label>
+      <Input name="auto_refraction_left_cylinder" value={examForm.auto_refraction_left_cylinder} onChange={handleExamChange} className="mb-3"/>
+
+      <Label htmlFor="auto_refraction_left_axis" className="mt-0">Auto Refraction Left AXIS</Label>
+      <Input name="auto_refraction_left_axis" value={examForm.auto_refraction_left_axis} onChange={handleExamChange} className="mb-3"/>
+
+      <Label htmlFor="auto_refraction_right_sphere" className="mt-0">Auto Refraction Right SPH</Label>
+      <Input name="auto_refraction_right_sphere" value={examForm.auto_refraction_right_sphere} onChange={handleExamChange} className="mb-3"/>
+
+      <Label htmlFor="auto_refraction_right_cylinder" className="mt-0">Auto Refraction Right CYL</Label>
+      <Input name="auto_refraction_right_cylinder" value={examForm.auto_refraction_right_cylinder} onChange={handleExamChange} className="mb-3"/>
+
+      <Label htmlFor="auto_refraction_right_axis" className="mt-0">Auto Refraction Right Axis</Label>
+      <Input name="auto_refraction_right_axis" value={examForm.auto_refraction_right_axis} onChange={handleExamChange} className="mb-3"/>
+
+
+      <Label htmlFor="chief_complaint" className="mt-0">Chief Complaint</Label>
+      <Input name="chief_complaint" value={examForm.chief_complaint} onChange={handleExamChange} className="mb-3"/>
+      <DialogFooter>
+        <Button type="submit">Save Changes</Button>
+      </DialogFooter>
+    </form>
+  </DialogContent>
+</Dialog>
+
     </div>
   );
 }
