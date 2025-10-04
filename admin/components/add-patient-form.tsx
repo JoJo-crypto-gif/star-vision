@@ -155,6 +155,7 @@ const onSubmit = async (data: z.infer<typeof addPatientSchema>) => {
     if (clinicId) {
       const referralPayload = {
         patient_id: patientId,
+        ...patientData,
         clinic_id: clinicId,
         remark: remark || ""
       };

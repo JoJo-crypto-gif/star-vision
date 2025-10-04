@@ -402,14 +402,15 @@ router.put("/examinations/:id", checkStaff(supabaseAdmin), async (req, res) => {
 // PUT /examination_findings/:id - Edit exam findings
 router.put("/examination_findings/:id", checkStaff(supabaseAdmin), async (req, res) => {
   const { id } = req.params;
-  const { description, eye } = req.body;
+  console.log("Incoming PUT /examination_findings:", req.params, req.body);
+  const { type, finding } = req.body; // 👈 match the actual table columns
 
   try {
     const { data, error } = await supabase
       .from("examination_findings")
       .update({
-        description,
-        eye,
+        type,
+        finding,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
@@ -421,9 +422,11 @@ router.put("/examination_findings/:id", checkStaff(supabaseAdmin), async (req, r
 
     res.json({ message: "Finding updated", finding: data });
   } catch (err) {
+    console.error("🔥 PUT /examination_findings error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // PUT /diagnoses/:id. - Edit diagnosis
 router.put("/diagnoses/:id", checkStaff(supabaseAdmin), async (req, res) => {

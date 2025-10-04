@@ -49,10 +49,15 @@ interface PatientDetailsProps {
   onBack: () => void;
 }
 
-export function PatientDetails({ patientDetails, onBack }: PatientDetailsProps) {
+export function PatientDetails({ patientDetails: initialDetails, onBack }: PatientDetailsProps) {
+  const [patientDetails, setPatientDetails] = useState(initialDetails);
   const { patient, exams, findings, diagnoses, payments } = patientDetails;
   // const latestExam = exams.length > 0 ? exams[0] : null;
   const [latestExam, setLatestExam] = useState<any>(exams.length > 0 ? exams[0] : null);
+  // For editing all findings at once
+const [showEditFindings, setShowEditFindings] = useState(false);
+const [findingsForm, setFindingsForm] = useState<any[]>(findings || []);
+
 
   const [showEditPatient, setShowEditPatient] = useState(false);
 const [form, setForm] = useState({
@@ -97,6 +102,11 @@ useEffect(() => {
   }
 }, [latestExam]); 
 
+useEffect(() => {
+  setFindingsForm(findings || []);
+}, [findings]);
+
+
 const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   setForm({ ...form, [e.target.name]: e.target.value });
 };
@@ -117,6 +127,12 @@ const handleUpdatePatient = async (e: React.FormEvent) => {
         },
       }
     );
+
+    setPatientDetails((prev: any) => ({
+      ...prev,
+      patient: res.data.patient, // 👈 updated patient from backend
+    }));
+
     console.log("Update response:", res.data);
     alert("Patient updated ✅");
     setShowEditPatient(false);
@@ -139,8 +155,20 @@ const handleUpdateExam = async (e: React.FormEvent) => {
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
+    const updatedExam = response.data.exam; // ✅ backend returns updated exam
+
+    // Update patientDetails.exams state
+    setPatientDetails((prev: any) => ({
+      ...prev,
+      exams: prev.exams.map((exam: any) =>
+        exam.id === updatedExam.id ? updatedExam : exam
+      ),
+    }));
+
+    // Update latestExam too
+    setLatestExam(updatedExam);
+
     alert("Exam updated ✅");
-    setLatestExam(response.data); // 👈 update state with fresh data
     setShowEditExam(false);
   } catch (err: any) {
     console.error("Exam update error:", err.response?.data || err.message);
@@ -148,6 +176,45 @@ const handleUpdateExam = async (e: React.FormEvent) => {
   }
 };
 
+const handleFindingFieldChange = (index: number, field: string, value: string) => {
+  setFindingsForm((prev) =>
+    prev.map((f, i) => (i === index ? { ...f, [field]: value } : f))
+  );
+};
+
+const handleUpdateFindings = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return alert("You are not logged in");
+
+    // Update each finding
+await Promise.all(
+  findingsForm.map((f) => {
+    console.log("Sending finding update:", f.id, { type: f.type, finding: f.finding });
+    return axios.put(
+      `http://localhost:5050/patients/examination_findings/${f.id}`,
+      { type: f.type, finding: f.finding },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  })
+);
+
+
+
+    // Update UI instantly
+    setPatientDetails((prev: any) => ({
+      ...prev,
+      findings: findingsForm,
+    }));
+
+    alert("All findings updated ✅");
+    setShowEditFindings(false);
+  } catch (err: any) {
+    console.error("Findings update error:", err.response?.data || err.message);
+    alert("Failed to update findings ❌");
+  }
+};
 
   return (
     <div className="space-y-6">
@@ -281,11 +348,12 @@ const handleUpdateExam = async (e: React.FormEvent) => {
               </div>
             )}
           </CardContent>
-          <CardFooter className="flex justify-end">
-              <Button variant="outline">
-                Edit Findings
-              </Button>
-          </CardFooter>
+<CardFooter className="flex justify-end">
+  <Button variant="outline" onClick={() => setShowEditFindings(true)}>
+    Edit Findings
+  </Button>
+</CardFooter>
+
         </Card>
 
         <Card>
@@ -447,6 +515,38 @@ const handleUpdateExam = async (e: React.FormEvent) => {
     </form>
   </DialogContent>
 </Dialog>
+
+<Dialog open={showEditFindings} onOpenChange={setShowEditFindings}>
+  <DialogContent className="max-h-[80vh] overflow-y-auto">
+    <DialogHeader>
+      <DialogTitle>Edit All Findings</DialogTitle>
+      <DialogDescription>Modify all findings for this patient.</DialogDescription>
+    </DialogHeader>
+
+    <form onSubmit={handleUpdateFindings} className="space-y-4">
+      {findingsForm.map((f, i) => (
+        <div key={f.id} className="space-y-2 border p-3 rounded-lg">
+          <Label className="text-sm font-medium">Type</Label>
+          <Input
+            value={f.type}
+            onChange={(e) => handleFindingFieldChange(i, "type", e.target.value)}
+          />
+
+          <Label className="text-sm font-medium">Finding</Label>
+          <Input
+            value={f.finding}
+            onChange={(e) => handleFindingFieldChange(i, "finding", e.target.value)}
+          />
+        </div>
+      ))}
+
+      <DialogFooter>
+        <Button type="submit">Save All Changes</Button>
+      </DialogFooter>
+    </form>
+  </DialogContent>
+</Dialog>
+
 
     </div>
   );
