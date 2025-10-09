@@ -30,6 +30,15 @@ const patientRoutes = (supabase, supabaseAdmin) => {
       auto_refraction_right_sphere,
       auto_refraction_right_cylinder,
       auto_refraction_right_axis,
+
+      // -- NEW SUBJECTIVE REFRACTION FIELDS --
+      subjective_refraction_left_sphere,
+      subjective_refraction_left_cylinder,
+      subjective_refraction_left_axis,
+      subjective_refraction_right_sphere,
+      subjective_refraction_right_cylinder,
+      subjective_refraction_right_axis,
+
       chief_complaint,
 
       // findings & diagnoses
@@ -106,6 +115,14 @@ const patientRoutes = (supabase, supabaseAdmin) => {
             auto_refraction_right_sphere,
             auto_refraction_right_cylinder,
             auto_refraction_right_axis,
+
+            // -- INSERT NEW SUBJECTIVE REFRACTION FIELDS --
+            subjective_refraction_left_sphere,
+            subjective_refraction_left_cylinder,
+            subjective_refraction_left_axis,
+            subjective_refraction_right_sphere,
+            subjective_refraction_right_cylinder,
+            subjective_refraction_right_axis,
             chief_complaint,
           },
         ])
@@ -165,6 +182,7 @@ const patientRoutes = (supabase, supabaseAdmin) => {
           patient_id: patient.id,
           item: p.item,
           amount: p.amount,
+          category: p.category ?? null,
           status: p.status ?? "pending",
         }));
         const { error: payErr } = await supabase
@@ -365,6 +383,15 @@ router.put("/examinations/:id", checkStaff(supabaseAdmin), async (req, res) => {
     auto_refraction_right_sphere,
     auto_refraction_right_cylinder,
     auto_refraction_right_axis,
+    // -- NEW SUBJECTIVE REFRACTION FIELDS --
+    subjective_refraction_left_sphere,
+    subjective_refraction_left_cylinder,
+    subjective_refraction_left_axis,
+    subjective_refraction_right_sphere,
+    subjective_refraction_right_cylinder,
+    subjective_refraction_right_axis,
+    // -------------------------------------
+
     chief_complaint
   } = req.body;
 
@@ -382,6 +409,14 @@ router.put("/examinations/:id", checkStaff(supabaseAdmin), async (req, res) => {
         auto_refraction_right_sphere,
         auto_refraction_right_cylinder,
         auto_refraction_right_axis,
+        // -- UPDATE NEW SUBJECTIVE REFRACTION FIELDS --
+        subjective_refraction_left_sphere,
+        subjective_refraction_left_cylinder,
+        subjective_refraction_left_axis,
+        subjective_refraction_right_sphere,
+        subjective_refraction_right_cylinder,
+        subjective_refraction_right_axis,
+        // -------------------------------------------
         chief_complaint,
         updated_at: new Date().toISOString(),
       })
@@ -428,18 +463,18 @@ router.put("/examination_findings/:id", checkStaff(supabaseAdmin), async (req, r
 });
 
 
-// PUT /diagnoses/:id. - Edit diagnosis
+// PUT /diagnoses/:id - Edit diagnosis
 router.put("/diagnoses/:id", checkStaff(supabaseAdmin), async (req, res) => {
   const { id } = req.params;
-  const { condition, severity, notes } = req.body;
+  const { diagnosis, plan, category } = req.body; // 👈 match actual table columns
 
   try {
     const { data, error } = await supabase
       .from("diagnoses")
       .update({
-        condition,
-        severity,
-        notes,
+        diagnosis,
+        plan,
+        category,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
@@ -451,12 +486,62 @@ router.put("/diagnoses/:id", checkStaff(supabaseAdmin), async (req, res) => {
 
     res.json({ message: "Diagnosis updated", diagnosis: data });
   } catch (err) {
+    console.error("🔥 PUT /diagnoses error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
 
+// POST /examination_findings - Add new finding
+router.post("/:patientId/findings", checkStaff(supabaseAdmin), async (req, res) => {
+  const { exam_id, type, finding } = req.body;
 
+  try {
+    const { data, error } = await supabase
+      .from("examination_findings")
+      .insert([
+        {
+          exam_id,
+          type,
+          finding,
+          updated_at: new Date().toISOString(),
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: "Finding added", finding: data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /diagnoses - Add new diagnosis
+router.post("/:patientId/diagnoses", checkStaff(supabaseAdmin), async (req, res) => {
+  const { exam_id, diagnosis, category, plan } = req.body; 
+
+  try {
+    const { data, error } = await supabase
+      .from("diagnoses")
+      .insert([
+        {
+          exam_id,
+          diagnosis,
+          category,
+          plan,
+          updated_at: new Date().toISOString(), 
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: "Diagnosis added", diagnosis: data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
   return router;
 };

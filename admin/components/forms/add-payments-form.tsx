@@ -31,6 +31,35 @@ export function AddPaymentsForm() {
           <div key={item.id} className="relative p-4 border rounded-md">
             <h4 className="text-md font-semibold mb-2">Payment {index + 1}</h4>
             <div className="grid grid-cols-2 gap-4">
+  
+            <div className="grid gap-2 mt-4">
+              <Label htmlFor={`payments[${index}].category`}>Category</Label>
+              <Controller
+               name={`payments.${index}.category`}
+               control={control}
+               render={({ field }) => (
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <SelectTrigger>
+              <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+              <SelectItem value="Examination">Examination</SelectItem>
+              <SelectItem value="Eye Drop">Eye Drop</SelectItem>
+              <SelectItem value="Optical">Optical</SelectItem>
+              <SelectItem value="Drugs">Drugs</SelectItem>
+              <SelectItem value="Laboratory">Laboratory</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+              </Select>
+              )}
+            />
+            {errors.payments?.[index]?.category && (
+            <p className="text-sm text-destructive">
+              {errors.payments[index].category.message as string}
+            </p>
+             )}
+              </div>
+
               <div className="grid gap-2">
                 <Label htmlFor={`payments[${index}].item`}>Item</Label>
                 <Controller
@@ -90,7 +119,7 @@ export function AddPaymentsForm() {
           type="button"
           variant="outline"
           className="w-full"
-          onClick={() => append({ item: "", amount: 0, status: "pending" })}
+          onClick={() => append({ category: "", item: "", amount: 0, status: "pending" })}
         >
           <PlusCircle className="h-4 w-4 mr-2" /> Add Payment
         </Button>
