@@ -3,10 +3,6 @@ import nodemailer from 'nodemailer';
 import dotenv from "dotenv";
 dotenv.config();
 
-console.log("📧 EMAIL_USER:", process.env.EMAIL_USER);
-console.log("📧 EMAIL_PASS:", process.env.EMAIL_PASS ? "✅ loaded" : "❌ missing");
-
-
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -15,14 +11,20 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export const sendReferralEmail = async (to, data) => {
+export const sendReferralEmail = async (to, data, referredClinicName) => {
   const { 
     name, contact, gender, venue, appointment_date, appointment_for,
     visual_acuity_left, visual_acuity_right, pinhole_left, pinhole_right,
     auto_refraction_left_sphere, auto_refraction_left_cylinder, auto_refraction_left_axis,
     auto_refraction_right_sphere, auto_refraction_right_cylinder, auto_refraction_right_axis,
-    chief_complaint, findings, diagnoses, payments, remark
+    chief_complaint, findings, diagnoses, payments, remark,
+    
+    // 🛑 NEW: Subjective Refraction Fields
+    subjective_refraction_left_sphere, subjective_refraction_left_cylinder, subjective_refraction_left_axis,
+    subjective_refraction_right_sphere, subjective_refraction_right_cylinder, subjective_refraction_right_axis,
   } = data;
+  
+  const referringClinicName = "Star Vision"; 
 
   const patientInfoHtml = `
     <li><b>Name:</b> ${name || 'N/A'}</li>
@@ -36,21 +38,27 @@ export const sendReferralEmail = async (to, data) => {
 
   const examInfoHtml = `
     <h3>Examination Details</h3>
+    <h4>Visual Acuity & Pinhole</h4>
     <ul>
       <li><b>Visual Acuity (Left):</b> ${visual_acuity_left || 'N/A'}</li>
       <li><b>Visual Acuity (Right):</b> ${visual_acuity_right || 'N/A'}</li>
       <li><b>Pinhole (Left):</b> ${pinhole_left || 'N/A'}</li>
       <li><b>Pinhole (Right):</b> ${pinhole_right || 'N/A'}</li>
-      <li><b>Left Refraction (Sphere):</b> ${auto_refraction_left_sphere || 'N/A'}</li>
-      <li><b>Left Refraction (Cylinder):</b> ${auto_refraction_left_cylinder || 'N/A'}</li>
-      <li><b>Left Refraction (Axis):</b> ${auto_refraction_left_axis || 'N/A'}</li>
-      <li><b>Right Refraction (Sphere):</b> ${auto_refraction_right_sphere || 'N/A'}</li>
-      <li><b>Right Refraction (Cylinder):</b> ${auto_refraction_right_cylinder || 'N/A'}</li>
-      <li><b>Right Refraction (Axis):</b> ${auto_refraction_right_axis || 'N/A'}</li>
     </ul>
-  `;
 
-  // ✅ CORRECTED: Use optional chaining and nullish coalescing for safety
+    <h4>Auto Refraction</h4>
+    <ul>
+      <li><b>Left (Sphere/Cylinder/Axis):</b> ${auto_refraction_left_sphere || 'N/A'} / ${auto_refraction_left_cylinder || 'N/A'} / ${auto_refraction_left_axis || 'N/A'}</li>
+      <li><b>Right (Sphere/Cylinder/Axis):</b> ${auto_refraction_right_sphere || 'N/A'} / ${auto_refraction_right_cylinder || 'N/A'} / ${auto_refraction_right_axis || 'N/A'}</li>
+    </ul>
+
+    <h4>Subjective Refraction</h4>
+    <ul>
+      <li><b>Left (Sphere/Cylinder/Axis):</b> ${subjective_refraction_left_sphere || 'N/A'} / ${subjective_refraction_left_cylinder || 'N/A'} / ${subjective_refraction_left_axis || 'N/A'}</li>
+      <li><b>Right (Sphere/Cylinder/Axis):</b> ${subjective_refraction_right_sphere || 'N/A'} / ${subjective_refraction_right_cylinder || 'N/A'} / ${subjective_refraction_right_axis || 'N/A'}</li>
+    </ul>
+  `; 
+
   const findingsInfoHtml = (findings?.length ?? 0) > 0 ? `
     <h3>Findings</h3>
     <ul>
@@ -86,10 +94,11 @@ export const sendReferralEmail = async (to, data) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: to,
-    subject: `Patient Referral: ${name || 'N/A'}`,
+    subject: `Patient Referral from ${referringClinicName}: ${name || 'N/A'}`,
     html: `
-      <h2>New Patient Referral</h2>
-      <p>Please find the details for a new patient referral below.</p>
+      <h2>New Patient Referral from ${referringClinicName}</h2>
+      <p>Dear ${referredClinicName || 'Referral Clinic'},</p>
+      <p>We are referring our patient, <b>${name || 'N/A'}</b>, to your clinic for specialized care. Please find their details and examination results below.</p>
       
       <h3>Patient Details</h3>
       <ul>
@@ -105,11 +114,12 @@ export const sendReferralEmail = async (to, data) => {
       ${paymentsInfoHtml}
 
       ${remark ? `
-        <h3>Remarks</h3>
+        <h3>Referring Doctor's Remarks</h3>
         <p>${remark}</p>
       ` : ''}
       
-      <p>This patient was referred by Star Vision.</p>
+      <p>Please contact the patient at ${contact || 'N/A'} to schedule the next steps.</p>
+      <p>Regards,<br>${referringClinicName} Team</p>
     `,
   };
 

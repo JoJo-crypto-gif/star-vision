@@ -1,3 +1,4 @@
+//component/login-form.tsx
 "use client";
 
 import type React from "react";
@@ -43,12 +44,13 @@ export function LoginForm() {
       localStorage.setItem("user", JSON.stringify(data.user)); 
       localStorage.setItem("role", data.role); 
 
-      // 🚨 NEW LOGIC: Conditional redirection based on role
-      if (data.role === "admin") {
+       if (data.role === "admin") {
         router.push("/admin");
       } else if (data.role === "staff") {
         router.push("/staff/add-patient");
-      } else {
+      } else if (data.role === "doctor"){ // ⬅️ Correctly handles the 'doctor' role
+        router.push("/doctor");        // ⬅️ Redirects to the /doctor dashboard
+      }else {
         // Fallback for an unknown role
         console.error("Unknown user role:", data.role);
         router.push("/login");

@@ -1,4 +1,4 @@
-// components/add-staff-form.tsx
+// components/add-doctor-form.tsx
 
 "use client";
 
@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Mail, Lock, CheckCircle, XCircle, User, Phone } from "lucide-react";
+import { Mail, Lock, CheckCircle, XCircle, User, Phone, Stethoscope } from "lucide-react";
 
-export function AddStaffForm() {
+export function AddDoctorForm({ onSuccessfulSubmit }: { onSuccessfulSubmit: () => void }) { // 🛑 RENAME + Added optional callback
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,7 +35,8 @@ export function AddStaffForm() {
     }
 
     try {
-      const response = await fetch("http://localhost:5050/users/add-staff", {
+      // 🛑 KEY CHANGE: Targeting the new /users/add-doctor endpoint
+      const response = await fetch("http://localhost:5050/users/add-doctor", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -44,31 +45,30 @@ export function AddStaffForm() {
         body: JSON.stringify({ email, password, name, phone }),
       });
 
-      // 🚨 NEW LOGIC: Check for successful response before parsing
       if (!response.ok) {
-        // Handle cases where the server returns a non-200 status code
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {
-          // If the error response is JSON, parse it and get the message
           const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to add staff member.");
+          throw new Error(errorData.error || "Failed to add doctor."); // 🛑 UPDATED TEXT
         } else {
-          // If it's not JSON, it's likely a plain text or HTML error from a middleware
           throw new Error(`Server error: ${response.status} ${response.statusText}`);
         }
       }
 
-      // If the response is OK (200), proceed with JSON parsing
       const data = await response.json();
 
-      setSuccess("Staff member added successfully!");
+      setSuccess("Doctor added successfully!"); // 🛑 UPDATED TEXT
       setEmail("");
       setPassword("");
       setName("");
       setPhone("");
-      console.log("Staff added:", data);
+      console.log("Doctor added:", data);
+
+      // Call the callback to close the modal or refresh the table
+      onSuccessfulSubmit(); 
+      
     } catch (err) {
-      console.error("Failed to add staff:", err);
+      console.error("Failed to add doctor:", err); // 🛑 UPDATED TEXT
       setError(err instanceof Error ? err.message : "An unknown error occurred.");
     } finally {
       setIsLoading(false);
@@ -78,9 +78,9 @@ export function AddStaffForm() {
   return (
     <div className="w-full max-w-lg space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold">Add New Staff Member</h2>
+        <h2 className="text-2xl font-bold">Add New Doctor</h2> {/* 🛑 UPDATED TEXT */}
         <p className="text-sm text-gray-500">
-          Enter the details for the new staff member.
+          Enter the details for the new doctor. {/* 🛑 UPDATED TEXT */}
         </p>
       </div>
 
@@ -107,7 +107,7 @@ export function AddStaffForm() {
             <Input
               id="name"
               type="text"
-              placeholder="John Doe"
+              placeholder="Dr. Jane Doe" // 🛑 UPDATED PLACEHOLDER
               className="pl-10"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -131,6 +131,20 @@ export function AddStaffForm() {
             />
           </div>
         </div>
+        
+        {/* Optional: Add a role display for clarity, using Stethoscope icon */}
+        <div className="space-y-2">
+          <Label htmlFor="role">Role</Label>
+          <div className="relative">
+            <Stethoscope className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+            <Input 
+                id="role"
+                value="Doctor"
+                readOnly
+                className="pl-10 bg-gray-50 cursor-default"
+            />
+          </div>
+        </div>
 
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
@@ -139,7 +153,7 @@ export function AddStaffForm() {
             <Input
               id="email"
               type="email"
-              placeholder="staff@example.com"
+              placeholder="doctor@example.com" // 🛑 UPDATED PLACEHOLDER
               className="pl-10"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -164,7 +178,7 @@ export function AddStaffForm() {
           </div>
         </div>
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Adding Staff..." : "Add Staff"}
+          {isLoading ? "Adding Doctor..." : "Add Doctor"} {/* 🛑 UPDATED TEXT */}
         </Button>
       </form>
     </div>

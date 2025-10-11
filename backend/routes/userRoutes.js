@@ -85,6 +85,43 @@ const userRoutes = (supabase, supabaseAdmin) => {
     }
   });
 
+  router.post("/add-doctor", checkAdmin(supabase), async (req, res) => {
+    const { email, password, name, phone } = req.body;
+
+    try {
+      // 1. Create user in Supabase Auth with service role
+      const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
+
+      if (createError) {
+        return res.status(400).json({ error: createError.message });
+      }
+
+      // 2. Insert into users table with role "doctor"
+      const { error: insertError } = await supabase
+        .from("users")
+        .insert([{
+          id: userData.user.id,
+          role: "doctor", // 🛑 KEY DIFFERENCE: role is 'doctor'
+          name,
+          phone,
+        }]);
+
+      if (insertError) {
+        // If user already exists in auth but fails here, clean up the auth record (optional but good practice)
+        await supabaseAdmin.auth.admin.deleteUser(userData.user.id);
+        return res.status(400).json({ error: insertError.message });
+      }
+
+      res.json({ message: "Doctor added successfully", user: userData.user });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // GET all staff - Enhanced with emails from auth.users
   router.get("/staff", checkAdmin(supabase), async (req, res) => {
     console.log("=== GET /staff route hit ===");
@@ -224,6 +261,116 @@ const userRoutes = (supabase, supabaseAdmin) => {
       
     } catch (err) {
       console.error("Unexpected error in DELETE /staff/:id:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+    // GET all doctors - Enhanced with emails from auth.users
+  router.get("/doctors", checkAdmin(supabase), async (req, res) => {
+    console.log("=== GET /doctors route hit ===");
+    
+    try {
+      // First, get ONLY doctor data from users table
+      const { data: doctorData, error } = await supabase
+        .from("users")
+        .select("id, role, name, phone")
+        .eq("role", "doctor"); // 🛑 Filter by 'doctor' role
+
+      if (error) {
+        console.log("Supabase error details:", error);
+        return res.status(400).json({ error: error.message });
+      }
+
+      if (!doctorData || doctorData.length === 0) {
+        console.log("No doctors found, returning empty array");
+        return res.json({ doctors: [] });
+      }
+
+      // Now fetch emails from auth.users using supabaseAdmin
+      const doctorsWithEmails = await Promise.all(
+        doctorData.map(async (doctor) => {
+          try {
+            const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(doctor.id);
+            
+            return {
+              ...doctor,
+              email: authUser.user?.email || 'N/A'
+            };
+          } catch (err) {
+            console.log(`Error fetching auth data for doctor ${doctor.id}:`, err);
+            return {
+              ...doctor,
+              email: 'N/A'
+            };
+          }
+        })
+      );
+
+      console.log("Successfully fetched doctors with emails");
+      res.json({ doctors: doctorsWithEmails });
+      
+    } catch (err) {
+      console.error("Unexpected error in /doctors route:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+
+  // PUT Edit doctor details
+  router.put("/doctors/:id", checkAdmin(supabase), async (req, res) => {
+    const { id } = req.params;
+    const { name, phone } = req.body;
+
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        // We do NOT check the role here, as the ID is unique and only admins can reach this route.
+        .update({ name, phone })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) return res.status(400).json({ error: error.message });
+
+      res.json({ message: "Doctor updated successfully", doctor: data });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+
+  // DELETE doctor
+  router.delete("/doctors/:id", checkAdmin(supabase), async (req, res) => {
+    const { id } = req.params;
+    console.log("=== DELETE /doctors/:id route hit ===");
+    
+    try {
+      // 1. Remove from Supabase Auth (must use supabaseAdmin)
+      console.log("Attempting to delete doctor from Supabase Auth...");
+      const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id);
+      
+      if (authError) {
+        console.log("Auth deletion error:", authError);
+        return res.status(400).json({ error: authError.message });
+      }
+
+      // 2. Remove from users table
+      console.log("Attempting to delete doctor from database...");
+      const { error: dbError } = await supabase
+        .from("users")
+        .delete()
+        .eq("id", id);
+
+      if (dbError) {
+        console.log("Database deletion error:", dbError);
+        return res.status(400).json({ error: dbError.message });
+      }
+
+      console.log("Doctor deletion successful");
+      res.json({ message: "Doctor deleted successfully" });
+      
+    } catch (err) {
+      console.error("Unexpected error in DELETE /doctors/:id:", err);
       res.status(500).json({ error: err.message });
     }
   });

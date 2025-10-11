@@ -57,7 +57,7 @@ interface PatientDetailsData {
 }
 
 
-export function AdminDashboard() {
+export function DoctorDashboard() {
   const router = useRouter(); 
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,7 +73,7 @@ export function AdminDashboard() {
     const storedUser = localStorage.getItem("user");
     const role = localStorage.getItem("role"); 
 
-    if (!storedUser || !role || role !== "admin") {
+    if (!storedUser || !role || role !== "doctor") {
       router.replace("/login");
       return;
     }
@@ -87,35 +87,6 @@ export function AdminDashboard() {
       setIsLoading(false);
       setError("Authentication token not found.");
     }
-
-    // Fetch staff count
-    const fetchStaffCount = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("Authentication token not found. Please log in.");
-        return;
-      }
-
-      try {
-        const response = await fetch("http://localhost:5050/users/staff-count", {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch staff count.");
-        }
-
-        const data = await response.json();
-        setStaffCount(data.staffCount);
-      } catch (err) {
-        console.error("Error fetching staff count:", err);
-        setError("Failed to load staff count.");
-      }
-    };
-    fetchStaffCount();
   }, [router]);
 
   const fetchPatients = async (token: string) => {
@@ -230,39 +201,27 @@ export function AdminDashboard() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveTab("staff")}  className="mb-5 text-md">
-                  <Users className="h-5 w-5" />
-                  <span>Staff</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveTab("doctor")}  className="mb-5 text-md">
-                  <Users className="h-5 w-5" />
-                  <span>Doctor</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => setActiveTab("clinics")}  className="mb-5 text-md">
                   <Hospital className="h-5 w-5" />
                   <span>Referral Clinics</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
+              {/* <SidebarMenuItem>
                 <SidebarMenuButton className="mb-5 text-md">
                   <Settings className="h-5 w-5" />
                   <span>Settings</span>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
+              </SidebarMenuItem> */}
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter className="border-t p-6">
             <div className="flex items-center gap-3">
               <Avatar>
                 <AvatarImage src="/placeholder-user.jpg" />
-                <AvatarFallback>AD</AvatarFallback>
+                <AvatarFallback>DU</AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-sm font-medium">Admin User</p>
+                <p className="text-sm font-medium">User</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
               </div>
               <Button variant="ghost" size="icon" className="ml-auto" onClick={handleLogout}>
@@ -296,22 +255,14 @@ export function AdminDashboard() {
                   <Calendar className="mr-2 h-5 w-5" />
                   Calendar
                 </Button>
-                <Button variant="ghost" className="justify-start" onClick={() => setActiveTab("staff")}>
-                  <Users className="mr-2 h-5 w-5" />
-                  Staff
-                </Button>
-                <Button variant="ghost" className="justify-start" onClick={() => setActiveTab("doctor")}>
-                  <Users className="mr-2 h-5 w-5" />
-                  Doctor
-                </Button>
                 <Button variant="ghost" className="justify-start" onClick={() => setActiveTab("clinics")}>
                   <Hospital className="mr-2 h-5 w-5" />
                   Clinics
                 </Button>
-                <Button variant="ghost" className="justify-start">
+                {/* <Button variant="ghost" className="justify-start">
                   <Settings className="mr-2 h-5 w-5" />
                   Settings
-                </Button>
+                </Button> */}
               </div>
             </div>
             <div className="border-t p-6 mt-auto">
@@ -321,7 +272,7 @@ export function AdminDashboard() {
                   <AvatarFallback>AD</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-sm font-medium">Admin User</p>
+                  <p className="text-sm font-medium">Doctor</p>
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
                 <Button variant="ghost" size="icon" className="ml-auto" onClick={handleLogout}>
@@ -354,11 +305,9 @@ export function AdminDashboard() {
           <main className="flex-1 p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               {/* 🚨 UPDATED: TabsList to not show the "Details" tab unless a patient is selected */}
-              <TabsList className="grid w-full max-w-md grid-cols-6">
+              <TabsList className="grid w-full max-w-md grid-cols-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="calendar">Calendar</TabsTrigger>
-                <TabsTrigger value="staff">Staff</TabsTrigger>
-                <TabsTrigger value="doctor">Doctor</TabsTrigger>
                 <TabsTrigger value="clinics">Clinics</TabsTrigger>
                 <TabsTrigger value="details" disabled={!selectedPatientId}>
                   Details
@@ -380,74 +329,6 @@ export function AdminDashboard() {
               )}
 
               <TabsContent value="overview" className="space-y-6">
-                {/* Stats Cards */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Total Staff</CardTitle>
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      {isLoading ? (
-                        <Skeleton className="h-8 w-16" />
-                      ) : (
-                        <>
-                          <div className="text-2xl font-bold">{staffCount !== null ? staffCount : '...'}</div> 
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Upcoming Appointments</CardTitle>
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      {isLoading ? (
-                        <Skeleton className="h-8 w-16" />
-                      ) : (
-                        <>
-                          <div className="text-2xl font-bold">{upcomingAppointments}</div>
-                          {/* 🚨 Note: We need more data to show next event details */}
-                          <p className="text-xs text-muted-foreground">Upcoming appointments</p>
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Total Patients</CardTitle>
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      {isLoading ? (
-                        <Skeleton className="h-8 w-16" />
-                      ) : (
-                        <>
-                          <div className="text-2xl font-bold">{totalPatients !== null ? totalPatients : '...'}</div>
-                          <p className="text-xs text-muted-foreground">Total registered patients</p>
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      {isLoading ? (
-                        <Skeleton className="h-8 w-16" />
-                      ) : (
-                        <>
-                          <div className="text-2xl font-bold">TBD</div>
-                          <p className="text-xs text-muted-foreground">Payment logic not yet integrated</p>
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-
                 {/* Patient Table */}
                 {isLoading ? (
                   <div className="space-y-4">

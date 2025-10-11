@@ -6,7 +6,7 @@ import { sendWhatsAppMessage } from "../utils/whatsapp.js";
 const patientRoutes = (supabase, supabaseAdmin) => {
   const router = express.Router();
 
-  // Create a full patient record (patient + exam + findings + diagnoses + payments)
+  // Create a full patient record (patient + exam + findings)
   router.post("/", checkStaff(supabaseAdmin), async (req, res) => {
     let {
       name,
@@ -16,8 +16,6 @@ const patientRoutes = (supabase, supabaseAdmin) => {
       guarantor_name,
       guarantor_contact,
       profile_picture,
-      appointment_date,
-      appointment_for,
 
       // exam
       visual_acuity_left,
@@ -40,29 +38,10 @@ const patientRoutes = (supabase, supabaseAdmin) => {
       subjective_refraction_right_axis,
 
       chief_complaint,
-
-      // findings & diagnoses
-      findings,
-      diagnoses,
-
-      // payments
-      payments,
     } = req.body;
 
     const staff_id = req.user.id;
     console.log("➡️ POST /patients by staff:", staff_id, "| patient:", name);
-
-    // Appointment date handling: silent fallback to null if missing/invalid
-    if (appointment_date) {
-      const d = new Date(appointment_date);
-      if (isNaN(d.getTime())) {
-        console.log("⚠️ Invalid appointment_date received. Saving as null.");
-        appointment_date = null;
-      }
-    } else {
-      console.log("ℹ️ No appointment_date provided. Saving as null.");
-      appointment_date = null;
-    }
 
     try {
       // 1) Create patient
@@ -77,8 +56,6 @@ const patientRoutes = (supabase, supabaseAdmin) => {
             guarantor_name,
             guarantor_contact,
             profile_picture,
-            appointment_date,
-            appointment_for,
             staff_id,
           },
         ])
@@ -91,7 +68,7 @@ const patientRoutes = (supabase, supabaseAdmin) => {
       }
       console.log("✅ Patient created:", patient?.id);
 
-      // Send WhatsApp thank you message (best effort)
+      // Send WhatsApp thank you message
       if (patient?.contact) {
         sendWhatsAppMessage(patient.contact, "hello_world")
           .then(() => console.log("📨 WhatsApp sent"))
@@ -116,7 +93,7 @@ const patientRoutes = (supabase, supabaseAdmin) => {
             auto_refraction_right_cylinder,
             auto_refraction_right_axis,
 
-            // -- INSERT NEW SUBJECTIVE REFRACTION FIELDS --
+            // -- NEW SUBJECTIVE REFRACTION FIELDS --
             subjective_refraction_left_sphere,
             subjective_refraction_left_cylinder,
             subjective_refraction_left_axis,
@@ -135,71 +112,8 @@ const patientRoutes = (supabase, supabaseAdmin) => {
       }
       console.log("✅ Exam created:", exam?.id);
 
-      // 3) Insert findings (if any)
-      if (Array.isArray(findings) && findings.length > 0) {
-        const findingsPayload = findings.map((f) => ({
-          exam_id: exam.id,
-          type: f.type,
-          finding: f.finding,
-        }));
-        const { error: fErr } = await supabase
-          .from("examination_findings")
-          .insert(findingsPayload);
-
-        if (fErr) {
-          console.error("❌ Findings insert error:", fErr.message);
-        } else {
-          console.log("✅ Inserted findings:", findingsPayload.length);
-        }
-      } else {
-        console.log("⚠️ Skipped findings: empty array");
-      }
-
-      // 4) Insert diagnoses (if any)
-      if (Array.isArray(diagnoses) && diagnoses.length > 0) {
-        const diagPayload = diagnoses.map((d) => ({
-          exam_id: exam.id,
-          diagnosis: d.diagnosis,
-          plan: d.plan ?? "",
-          category: d.category ?? null,
-        }));
-        const { error: dErr } = await supabase
-          .from("diagnoses")
-          .insert(diagPayload);
-
-        if (dErr) {
-          console.error("❌ Diagnoses insert error:", dErr.message);
-        } else {
-          console.log("✅ Inserted diagnoses:", diagPayload.length);
-        }
-      } else {
-        console.log("⚠️ Skipped diagnoses: empty array");
-      }
-
-      // 5) Insert payments (if any)
-      if (Array.isArray(payments) && payments.length > 0) {
-        const paymentPayload = payments.map((p) => ({
-          patient_id: patient.id,
-          item: p.item,
-          amount: p.amount,
-          category: p.category ?? null,
-          status: p.status ?? "pending",
-        }));
-        const { error: payErr } = await supabase
-          .from("payments")
-          .insert(paymentPayload);
-
-        if (payErr) {
-          console.error("❌ Payments insert error:", payErr.message);
-        } else {
-          console.log("✅ Inserted payments:", paymentPayload.length);
-        }
-      } else {
-        console.log("⚠️ Skipped payments: empty array");
-      }
-
       return res.json({
-        message: "Patient registered successfully",
+        message: "Patient and Examination registered successfully",
         patient,
         exam,
       });
@@ -383,7 +297,6 @@ router.put("/examinations/:id", checkStaff(supabaseAdmin), async (req, res) => {
     auto_refraction_right_sphere,
     auto_refraction_right_cylinder,
     auto_refraction_right_axis,
-    // -- NEW SUBJECTIVE REFRACTION FIELDS --
     subjective_refraction_left_sphere,
     subjective_refraction_left_cylinder,
     subjective_refraction_left_axis,
@@ -391,7 +304,6 @@ router.put("/examinations/:id", checkStaff(supabaseAdmin), async (req, res) => {
     subjective_refraction_right_cylinder,
     subjective_refraction_right_axis,
     // -------------------------------------
-
     chief_complaint
   } = req.body;
 
@@ -409,7 +321,6 @@ router.put("/examinations/:id", checkStaff(supabaseAdmin), async (req, res) => {
         auto_refraction_right_sphere,
         auto_refraction_right_cylinder,
         auto_refraction_right_axis,
-        // -- UPDATE NEW SUBJECTIVE REFRACTION FIELDS --
         subjective_refraction_left_sphere,
         subjective_refraction_left_cylinder,
         subjective_refraction_left_axis,

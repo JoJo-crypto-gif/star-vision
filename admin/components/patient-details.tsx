@@ -1,11 +1,12 @@
 "use client";
 
-import { ArrowLeft, Calendar, User, Phone, MapPin, Stethoscope, FileText, Wallet, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Calendar, User, Phone, MapPin, Stethoscope, FileText, Wallet, Pencil, Trash2, Send } from "lucide-react";
 import { format } from "date-fns";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; 
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -49,6 +50,12 @@ interface PatientDetailsProps {
   onBack: () => void;
 }
 
+interface ReferralClinic {
+  id: string;
+  name: string;
+  email: string;
+}
+
 // Define the standardized list of categories
 const DIAGNOSIS_CATEGORIES = [
   "Refractive error",
@@ -79,6 +86,15 @@ export function PatientDetails({ patientDetails: initialDetails, onBack }: Patie
   // For adding new diagnoses
   const [newDiagnosis, setNewDiagnosis] = useState({ diagnosis: "", category: "", plan: "" });
   const [showAddDiagnosis, setShowAddDiagnosis] = useState(false);
+  //For referrals
+  const [showReferralDialog, setShowReferralDialog] = useState(false);
+  const [clinics, setClinics] = useState<ReferralClinic[]>([]);
+  const [selectedClinicId, setSelectedClinicId] = useState<string>("");
+  const [referralRemark, setReferralRemark] = useState<string>("");
+  const [isReferring, setIsReferring] = useState(false);
+  const [referralHistory, setReferralHistory] = useState<any[]>([]); 
+  
+
 
 
 
@@ -149,7 +165,42 @@ useEffect(() => {
   setDiagnosisForm(diagnoses || []);
 }, [diagnoses]);
 
+  useEffect(() => {
+    if (showReferralDialog && clinics.length === 0) {
+      const fetchClinics = async () => {
+        const token = localStorage.getItem("token");
+        if (!token) return;
 
+        try {
+          const res = await axios.get("http://localhost:5050/referrals/clinics", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setClinics(res.data);
+        } catch (error) {
+          console.error("Failed to fetch referral clinics:", error);
+          alert("Failed to load clinics.");
+        }
+      };
+      fetchClinics();
+    }
+  }, [showReferralDialog, clinics.length]);
+
+  useEffect(() => {
+    const fetchReferralHistory = async () => {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        try {
+            const res = await axios.get(`http://localhost:5050/referrals/patient/${patient.id}`, { 
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setReferralHistory(res.data);
+        } catch (error) {
+            console.error("Failed to fetch referral history:", error);
+        }
+    };
+    fetchReferralHistory();
+}, [patient.id]);
 
 const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   setForm({ ...form, [e.target.name]: e.target.value });
@@ -389,6 +440,75 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
   }
 };
 
+// 🛑 NEW: Handle referral submission
+  const handleReferralSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsReferring(true);
+
+    if (!selectedClinicId) {
+      alert("Please select a clinic.");
+      setIsReferring(false);
+      return;
+    }
+    
+    // 🛑 1. Compile ALL necessary patient and exam data for the email
+    const referralData = {
+      patient_id: patient.id,
+      clinic_id: selectedClinicId,
+      remark: referralRemark,
+      
+      // Patient Demographics (for email utility)
+      name: patient.name,
+      contact: patient.contact,
+      gender: patient.gender,
+      venue: patient.venue,
+      appointment_date: patient.appointment_date,
+      // You may need to fetch the appointment_for if it's not in the patient object
+      appointment_for: latestExam?.chief_complaint, 
+      
+      // Examination Data (from the latestExam object)
+      ...(latestExam || {}), // Spread all latest exam properties (VA, refraction, etc.)
+      
+      // Findings, Diagnoses, and Payments (for email utility)
+      findings: findings,
+      diagnoses: diagnoses,
+      payments: payments,
+    };
+    
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Authentication failed. Please log in.");
+        setIsReferring(false);
+        return;
+      }
+      
+      const res = await axios.post(
+        "http://localhost:5050/referrals",
+        referralData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      
+      alert(`Referral sent to ${clinics.find(c => c.id === selectedClinicId)?.name} ✅`);
+      console.log("Referral response:", res.data);
+      
+      // Reset state and close modal
+      setSelectedClinicId("");
+      setReferralRemark("");
+      setShowReferralDialog(false);
+      
+    } catch (err: any) {
+      console.error("Referral submission error:", err.response?.data || err.message);
+      alert(`Failed to send referral: ${err.response?.data?.error || 'Server error'}`);
+    } finally {
+      setIsReferring(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* 🚨 UPDATED: Top section for patient and staff info */}
@@ -458,22 +578,22 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
                   <div>
                     <p className="font-medium">Visual Acuity</p>
                     <p className="text-sm text-muted-foreground">
-                      Left: {latestExam.visual_acuity_left ?? "N/A"} / Right: {latestExam.visual_acuity_right ?? "N/A"}
+                      Right: {latestExam.visual_acuity_right ?? "N/A"} / Left: {latestExam.visual_acuity_left ?? "N/A"}
                     </p>
                   </div>
                   <div>
                     <p className="font-medium">Pinhole</p>
                     <p className="text-sm text-muted-foreground">
-                      Left: {latestExam.pinhole_left ?? "N/A"} / Right: {latestExam.pinhole_right ?? "N/A"}
+                      Right: {latestExam.pinhole_right ?? "N/A"} / Left: {latestExam.pinhole_left ?? "N/A"}
                     </p>
                   </div>
                   <div>
                     <p className="font-medium">Auto Refraction</p>
                     <p className="text-sm text-muted-foreground">
-                      Left: SPH {latestExam.auto_refraction_left_sphere ?? "N/A"}, CYL {latestExam.auto_refraction_left_cylinder ?? "N/A"}, Axis {latestExam.auto_refraction_left_axis ?? "N/A"}
+                      Right: SPH {latestExam.auto_refraction_right_sphere ?? "N/A"}, CYL {latestExam.auto_refraction_right_cylinder ?? "N/A"}, Axis {latestExam.auto_refraction_right_axis ?? "N/A"}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Right: SPH {latestExam.auto_refraction_right_sphere ?? "N/A"}, CYL {latestExam.auto_refraction_right_cylinder ?? "N/A"}, Axis {latestExam.auto_refraction_right_axis ?? "N/A"}
+                      Left: SPH {latestExam.auto_refraction_left_sphere ?? "N/A"}, CYL {latestExam.auto_refraction_left_cylinder ?? "N/A"}, Axis {latestExam.auto_refraction_left_axis ?? "N/A"}
                     </p>
                   </div>
                   <div>
@@ -569,6 +689,39 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
       </div>
 
       {/* 🚨 NEW: Payments section */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Referrals</CardTitle>
+            <CardDescription>History of patient referrals to external clinics.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {referralHistory.length > 0 ? (
+              referralHistory.map((referral: any) => (
+                <div key={referral.id} className="border-b pb-3">
+                  <p className="font-medium text-black-600">
+                    Referred to {referral.referral_clinics.name}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Date: {format(new Date(referral.referred_at), "PPP")}
+                  </p>
+                  <p className="text-sm mt-1">
+                    Remark: {referral.remark || '*No specific remark*'}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                No previous referrals recorded.
+              </div>
+            )}
+          </CardContent>
+          <CardFooter className="flex justify-end">
+              <Button onClick={() => setShowReferralDialog(true)} className="gap-2">
+                  <Send className="h-4 w-4" /> New Referral
+              </Button>
+          </CardFooter>
+        </Card>
       <Card>
         <CardHeader>
           <CardTitle>Payments</CardTitle>
@@ -599,6 +752,7 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
           <Button variant="outline">Add Payment</Button>
         </CardFooter> */}
       </Card>
+      </div>
 
 <Dialog open={showEditPatient} onOpenChange={setShowEditPatient}>
   <DialogContent>
@@ -664,19 +818,19 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
       {/* 1. VISUAL ACUITY / PINHOLE SECTION (2 COLUMNS) */}
       <div className="grid grid-cols-2 gap-4"> 
         <div>
-          <Label htmlFor="visual_acuity_left">Visual Acuity Left</Label>
-          <Input name="visual_acuity_left" value={examForm.visual_acuity_left} onChange={handleExamChange} />
-          
-          <Label htmlFor="pinhole_left" className="mt-3 block">Pinhole Left</Label>
-          <Input name="pinhole_left" value={examForm.pinhole_left} onChange={handleExamChange} />
-        </div>
-        
-        <div>
           <Label htmlFor="visual_acuity_right">Visual Acuity Right</Label>
           <Input name="visual_acuity_right" value={examForm.visual_acuity_right} onChange={handleExamChange} />
           
           <Label htmlFor="pinhole_right" className="mt-3 block">Pinhole Right</Label>
           <Input name="pinhole_right" value={examForm.pinhole_right} onChange={handleExamChange} />
+        </div>
+
+        <div>
+          <Label htmlFor="visual_acuity_left">Visual Acuity Left</Label>
+          <Input name="visual_acuity_left" value={examForm.visual_acuity_left} onChange={handleExamChange} />
+          
+          <Label htmlFor="pinhole_left" className="mt-3 block">Pinhole Left</Label>
+          <Input name="pinhole_left" value={examForm.pinhole_left} onChange={handleExamChange} />
         </div>
       </div>
       
@@ -686,16 +840,7 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
         
         <div className="grid grid-cols-2 gap-4">
           
-          {/* LEFT AUTO REFRACTION (3 column group) */}
-          <div>
-            <Label className="block mb-1 font-medium">Left Eye (SPH/CYL/AXIS)</Label>
-            <div className="grid grid-cols-3 gap-2">
-              <Input name="auto_refraction_left_sphere" placeholder="SPH" value={examForm.auto_refraction_left_sphere} onChange={handleExamChange} />
-              <Input name="auto_refraction_left_cylinder" placeholder="CYL" value={examForm.auto_refraction_left_cylinder} onChange={handleExamChange} />
-              <Input name="auto_refraction_left_axis" placeholder="AXIS" value={examForm.auto_refraction_left_axis} onChange={handleExamChange} />
-            </div>
-          </div>
-          
+
           {/* RIGHT AUTO REFRACTION (3 column group) */}
           <div>
             <Label className="block mb-1 font-medium">Right Eye (SPH/CYL/AXIS)</Label>
@@ -705,6 +850,16 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
               <Input name="auto_refraction_right_axis" placeholder="AXIS" value={examForm.auto_refraction_right_axis} onChange={handleExamChange} />
             </div>
           </div>
+
+          {/* LEFT AUTO REFRACTION (3 column group) */}
+          <div>
+            <Label className="block mb-1 font-medium">Left Eye (SPH/CYL/AXIS)</Label>
+            <div className="grid grid-cols-3 gap-2">
+              <Input name="auto_refraction_left_sphere" placeholder="SPH" value={examForm.auto_refraction_left_sphere} onChange={handleExamChange} />
+              <Input name="auto_refraction_left_cylinder" placeholder="CYL" value={examForm.auto_refraction_left_cylinder} onChange={handleExamChange} />
+              <Input name="auto_refraction_left_axis" placeholder="AXIS" value={examForm.auto_refraction_left_axis} onChange={handleExamChange} />
+            </div>
+          </div>
         </div>
       </div>
       
@@ -712,18 +867,7 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
       <div className="space-y-3 p-4 border rounded-lg">
         <h3 className="font-semibold text-lg mb-3">Subjective Refraction</h3>
         
-        <div className="grid grid-cols-2 gap-4">
-          
-          {/* LEFT SUBJECTIVE REFRACTION (3 column group) */}
-          <div>
-            <Label className="block mb-1 font-medium">Left Eye (SPH/CYL/AXIS)</Label>
-            <div className="grid grid-cols-3 gap-2">
-              <Input name="subjective_refraction_left_sphere" placeholder="SPH" value={examForm.subjective_refraction_left_sphere} onChange={handleExamChange} />
-              <Input name="subjective_refraction_left_cylinder" placeholder="CYL" value={examForm.subjective_refraction_left_cylinder} onChange={handleExamChange} />
-              <Input name="subjective_refraction_left_axis" placeholder="AXIS" value={examForm.subjective_refraction_left_axis} onChange={handleExamChange} />
-            </div>
-          </div>
-          
+        <div className="grid grid-cols-2 gap-4">       
           {/* RIGHT SUBJECTIVE REFRACTION (3 column group) */}
           <div>
             <Label className="block mb-1 font-medium">Right Eye (SPH/CYL/AXIS)</Label>
@@ -731,6 +875,16 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
               <Input name="subjective_refraction_right_sphere" placeholder="SPH" value={examForm.subjective_refraction_right_sphere} onChange={handleExamChange} />
               <Input name="subjective_refraction_right_cylinder" placeholder="CYL" value={examForm.subjective_refraction_right_cylinder} onChange={handleExamChange} />
               <Input name="subjective_refraction_right_axis" placeholder="AXIS" value={examForm.subjective_refraction_right_axis} onChange={handleExamChange} />
+            </div>
+          </div>
+
+          {/* LEFT SUBJECTIVE REFRACTION (3 column group) */}
+          <div>
+            <Label className="block mb-1 font-medium">Left Eye (SPH/CYL/AXIS)</Label>
+            <div className="grid grid-cols-3 gap-2">
+              <Input name="subjective_refraction_left_sphere" placeholder="SPH" value={examForm.subjective_refraction_left_sphere} onChange={handleExamChange} />
+              <Input name="subjective_refraction_left_cylinder" placeholder="CYL" value={examForm.subjective_refraction_left_cylinder} onChange={handleExamChange} />
+              <Input name="subjective_refraction_left_axis" placeholder="AXIS" value={examForm.subjective_refraction_left_axis} onChange={handleExamChange} />
             </div>
           </div>
         </div>
@@ -888,6 +1042,53 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
         onChange={(e) => setNewDiagnosis({ ...newDiagnosis, plan: e.target.value })}
       />
       <Button type="submit" className="w-full">Add Diagnosis</Button>
+    </form>
+  </DialogContent>
+</Dialog>
+
+<Dialog open={showReferralDialog} onOpenChange={setShowReferralDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Refer Patient to a Clinic</DialogTitle>
+      <DialogDescription>
+        Select a clinic and add any specific remarks for the referral. Patient medical data will be automatically attached.
+      </DialogDescription>
+    </DialogHeader>
+
+    <form onSubmit={handleReferralSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="clinic-select">Select Referral Clinic</Label>
+        <Select onValueChange={setSelectedClinicId} disabled={isReferring}>
+          <SelectTrigger id="clinic-select">
+            <SelectValue placeholder="Choose a clinic..." />
+          </SelectTrigger>
+          <SelectContent>
+            {clinics.map((clinic) => (
+              <SelectItem key={clinic.id} value={clinic.id}>
+                {clinic.name} ({clinic.email})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="remark">Remarks (Optional)</Label>
+        <Input
+          id="remark"
+          type="text"
+          placeholder="e.g., Patient requires urgent Glaucoma evaluation."
+          value={referralRemark}
+          onChange={(e) => setReferralRemark(e.target.value)}
+          disabled={isReferring}
+        />
+      </div>
+
+      <DialogFooter>
+        <Button type="submit" disabled={!selectedClinicId || isReferring}>
+          {isReferring ? "Sending Referral..." : "Send Referral Email"}
+        </Button>
+      </DialogFooter>
     </form>
   </DialogContent>
 </Dialog>

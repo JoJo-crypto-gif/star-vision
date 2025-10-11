@@ -18,19 +18,18 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { AddPatientDetailsForm } from "@/components/forms/add-patient-details";
 import { AddExaminationForm } from "@/components/forms/add-examination-form";
-import { AddFindingsForm } from "@/components/forms/add-findings-form";
-import { AddDiagnosesForm } from "@/components/forms/add-diagnoses-form";
-import { AddPaymentsForm } from "@/components/forms/add-payments-form";
-import { AddReferralForm } from "@/components/forms/add-referral-form";
 
 import { addPatientSchema } from "@/components/schema/patient-schemas";
+
+// Define the expected shape of the schema manually since the original schema is complex
+type AddPatientData = z.infer<typeof addPatientSchema>;
 
 export function AddPatientForm() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false); // State for async operations
+  const [isSubmitting, setIsSubmitting] = useState(false); 
 
-  const methods = useForm({
+  const methods = useForm<AddPatientData>({
     resolver: zodResolver(addPatientSchema),
     mode: "onBlur",
     defaultValues: {
@@ -40,8 +39,7 @@ export function AddPatientForm() {
       venue: "",
       guarantor_name: "",
       guarantor_contact: "",
-      appointment_date: "",
-      appointment_for: "",
+
       profile_picture: null,
       visual_acuity_left: "",
       visual_acuity_right: "",
@@ -53,21 +51,28 @@ export function AddPatientForm() {
       auto_refraction_right_sphere: "",
       auto_refraction_right_cylinder: "",
       auto_refraction_right_axis: "",
+      // ✅ ADDED Subjective Refraction
+      subjective_refraction_left_sphere: "",
+      subjective_refraction_left_cylinder: "",
+      subjective_refraction_left_axis: "",
+      subjective_refraction_right_sphere: "",
+      subjective_refraction_right_cylinder: "",
+      subjective_refraction_right_axis: "",
+      // ----------------------------------
       chief_complaint: "",
-      findings: [],
-      diagnoses: [],
-      payments: [],
-      clinicId: "",
-      remark: "",
-    },
+    } as any, // Cast to any because the schema will be simplified next
   });
 
   const { handleSubmit, trigger, reset } = methods;
 
+  // Step components are simplified
+  const stepComponents = [
+    <AddPatientDetailsForm key="step0" />,
+    <AddExaminationForm key="step1" />,
+  ];
+
   // Step-specific validation
-  // CHANGE 1: Accept the React MouseEvent
   const handleNext = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    // FIX 1: Explicitly prevent the default form submission action
     e.preventDefault(); 
     
     setIsSubmitting(true); 
@@ -77,6 +82,7 @@ export function AddPatientForm() {
         if (step === 0) {
             isValid = await trigger(["name", "contact", "gender", "venue"] as const);
         } else if (step === 1) {
+            // Final validation step (Examination details)
             isValid = await trigger([
             "visual_acuity_left",
             "visual_acuity_right",
@@ -88,15 +94,18 @@ export function AddPatientForm() {
             "auto_refraction_right_sphere",
             "auto_refraction_right_cylinder",
             "auto_refraction_right_axis",
+            // ✅ Include Subjective Refraction for validation
+            "subjective_refraction_left_sphere",
+            "subjective_refraction_left_cylinder",
+            "subjective_refraction_left_axis",
+            "subjective_refraction_right_sphere",
+            "subjective_refraction_right_cylinder",
+            "subjective_refraction_right_axis",
             "chief_complaint",
             ] as const);
-        } else if (step === 2) {
-            isValid = await trigger(["findings"] as const);
-        } else if (step === 3) {
-            isValid = await trigger(["diagnoses"] as const);
-        } else if (step === 4) {
-            isValid = await trigger(["payments"] as const);
         }   
+
+
         if (isValid) {
             setStep((prev) => prev + 1);
         } else {
@@ -112,7 +121,7 @@ export function AddPatientForm() {
 
 
   // Final submit
-const onSubmit = async (data: z.infer<typeof addPatientSchema>) => {
+const onSubmit = async (data: AddPatientData) => {
   setIsSubmitting(true);
   const token = localStorage.getItem("token");
 
@@ -121,23 +130,18 @@ const onSubmit = async (data: z.infer<typeof addPatientSchema>) => {
     setIsSubmitting(false);
     return;
   }
-
-  // ✅ Clean optional fields
+  
   const payload = { ...data };
-  if (!payload.appointment_date) delete payload.appointment_date;
 
   try {
-    // ✅ Ensure cleaned data is used
-    const { clinicId, remark, ...patientData } = payload;
-
-    // 1. Add patient
+    // 1. Add patient & examination (Backend handles both)
     const patientResponse = await fetch("http://localhost:5050/patients", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(patientData),
+      body: JSON.stringify(payload), // Send the entire simplified form data
     });
 
     const patientResult = await patientResponse.json();
@@ -148,42 +152,8 @@ const onSubmit = async (data: z.infer<typeof addPatientSchema>) => {
         patientResult.error || patientResult.message || "Failed to add patient"
       );
     }
-
-    const patientId = patientResult.patient.id;
-
-    // 2. Add referral (optional)
-    if (clinicId) {
-      const referralPayload = {
-        patient_id: patientId,
-        ...patientData,
-        clinic_id: clinicId,
-        remark: remark || ""
-      };
-
-      const referralResponse = await fetch("http://localhost:5050/referrals", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(referralPayload),
-      });
-
-      const referralResult = await referralResponse.json();
-      console.log("Referral add response:", referralResult);
-
-      if (!referralResponse.ok) {
-        alert(
-          `⚠️ Referral Failed: Patient added, but referral could not be sent. (${
-            referralResult.error || referralResult.message || "Unknown error"
-          })`
-        );
-      } else {
-        alert("✅ Patient added and referral sent successfully!");
-      }
-    } else {
-      alert("✅ Patient added successfully!");
-    }
+    
+    alert("✅ Patient and Examination added successfully!");
 
     reset();
     setStep(0);
@@ -196,17 +166,6 @@ const onSubmit = async (data: z.infer<typeof addPatientSchema>) => {
   }
 };
 
-
-
-  // Step components
-  const stepComponents = [
-    <AddPatientDetailsForm key="step0" />,
-    <AddExaminationForm key="step1" />,
-    <AddFindingsForm key="step2" />,
-    <AddDiagnosesForm key="step3" />,
-    <AddPaymentsForm key="step4" />,
-    <AddReferralForm key="step5" />,
-  ];
 
   return (
     <Card className="max-w-3xl mx-auto w-full">
@@ -236,10 +195,10 @@ const onSubmit = async (data: z.infer<typeof addPatientSchema>) => {
               <ChevronLeft className="h-4 w-4 mr-2" /> Back
             </Button>
 
+            {/* stepComponents.length is 2. Submit button appears when step === 1 */}
             {step !== stepComponents.length - 1 ? (
               <Button 
                 type="button" 
-                // CHANGE 2: Pass the event object (e) to handleNext
                 onClick={handleNext} 
                 disabled={isSubmitting} 
               >
