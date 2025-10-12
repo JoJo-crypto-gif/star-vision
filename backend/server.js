@@ -18,7 +18,7 @@ console.log("🔑 Loaded ENV:", {
 
 const app = express();
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'], // Add your frontend URL
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'https://stareye.netlify.app'], // Add your frontend URL
   credentials: true
 }));
 app.use(express.json());
