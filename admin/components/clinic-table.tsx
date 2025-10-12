@@ -21,7 +21,7 @@ interface EditModalProps {
   onClose: () => void;
   onSave: (id: string, updatedData: { name: string; email: string }) => Promise<void>;
 }
-
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 function EditClinicModal({ clinic, isOpen, onClose, onSave }: EditModalProps) {
   const [name, setName] = useState(clinic.name);
   const [email, setEmail] = useState(clinic.email);
@@ -142,7 +142,7 @@ export function ClinicsTable() {
     }
 
     try {
-      const response = await axios.get("http://localhost:5050/referrals/clinics", {
+      const response = await axios.get(`${baseUrl}/referrals/clinics`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -164,7 +164,7 @@ export function ClinicsTable() {
     }
 
     try {
-      await axios.put(`http://localhost:5050/referrals/clinic/${clinicId}`, updatedData, {
+      await axios.put(`${baseUrl}/referrals/clinic/${clinicId}`, updatedData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -189,7 +189,7 @@ export function ClinicsTable() {
     }
 
     try {
-      await axios.delete(`http://localhost:5050/referrals/clinic/${clinicId}`, {
+      await axios.delete(`${baseUrl}/referrals/clinic/${clinicId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

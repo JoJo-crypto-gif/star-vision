@@ -56,7 +56,7 @@ interface PatientDetailsData {
   payments: any[];
 }
 
-
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 export function AdminDashboard() {
   const router = useRouter(); 
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -97,7 +97,7 @@ export function AdminDashboard() {
       }
 
       try {
-        const response = await fetch("http://localhost:5050/users/staff-count", {
+        const response = await fetch(`${baseUrl}/users/staff-count`, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -123,7 +123,7 @@ export function AdminDashboard() {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:5050/patients", {
+      const response = await fetch("${baseUrl}/patients", {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -155,7 +155,7 @@ export function AdminDashboard() {
   const fetchPatientDetails = async (id: string, token: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:5050/patients/${id}`, {
+      const response = await fetch(`${baseUrl}/patients/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -343,7 +343,7 @@ export function AdminDashboard() {
                   <Input type="search" placeholder="Search patients..." className="w-[200px] lg:w-[300px] pl-8" />
                 </div> */}
                 {/* 🚨 NEW: Add Patient button */}
-                <Button onClick={() => router.push("/add-patient")}>
+                <Button onClick={() => router.push("/staff/add-patient")}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add New Patient
                 </Button>

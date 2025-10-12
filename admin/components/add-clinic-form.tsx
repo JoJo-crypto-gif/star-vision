@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Mail, CheckCircle, XCircle, Building } from "lucide-react";
 
+
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 export function AddClinicForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -31,7 +33,7 @@ export function AddClinicForm() {
     }
 
     try {
-      const response = await fetch("http://localhost:5050/referrals/add-clinic", {
+      const response = await fetch(`${baseUrl}/referrals/add-clinic`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -22,6 +22,7 @@ interface EditModalProps {
   onSave: (id: string, updatedData: { name: string; phone: string }) => Promise<void>;
 }
 
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 function EditStaffModal({ staff, isOpen, onClose, onSave }: EditModalProps) {
   const [name, setName] = useState(staff.name);
   const [phone, setPhone] = useState(staff.phone);
@@ -166,7 +167,7 @@ export function StaffTable() {
     console.log("Token being sent:", token.substring(0, 20) + "..."); // Debug log
 
     try {
-      const response = await fetch("http://localhost:5050/users/staff", {
+      const response = await fetch(`${baseUrl}/users/staff`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -212,7 +213,7 @@ export function StaffTable() {
 
     console.log("Updating staff:", staffId, updatedData); // Debug log
 
-    const response = await fetch(`http://localhost:5050/users/staff/${staffId}`, {
+    const response = await fetch(`${baseUrl}/users/staff/${staffId}`, {
       method: "PUT",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -262,7 +263,7 @@ export function StaffTable() {
     console.log("Deleting staff with ID:", staffId); // Debug log
 
     try {
-      const response = await fetch(`http://localhost:5050/users/staff/${staffId}`, {
+      const response = await fetch(`${baseUrl}/users/staff/${staffId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`,

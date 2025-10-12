@@ -56,6 +56,7 @@ interface PatientDetailsData {
   payments: any[];
 }
 
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export function DoctorDashboard() {
   const router = useRouter(); 
@@ -94,7 +95,7 @@ export function DoctorDashboard() {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:5050/patients", {
+      const response = await fetch(`${baseUrl}/patients`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -126,7 +127,7 @@ export function DoctorDashboard() {
   const fetchPatientDetails = async (id: string, token: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:5050/patients/${id}`, {
+      const response = await fetch(`${baseUrl}/patients/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

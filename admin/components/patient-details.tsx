@@ -68,6 +68,7 @@ const DIAGNOSIS_CATEGORIES = [
   "Low vision",
   "Retinopathies",
 ];
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export function PatientDetails({ patientDetails: initialDetails, onBack }: PatientDetailsProps) {
   const [patientDetails, setPatientDetails] = useState(initialDetails);
@@ -172,7 +173,7 @@ useEffect(() => {
         if (!token) return;
 
         try {
-          const res = await axios.get("http://localhost:5050/referrals/clinics", {
+          const res = await axios.get(`${baseUrl}/referrals/clinics`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           setClinics(res.data);
@@ -191,7 +192,7 @@ useEffect(() => {
         if (!token) return;
 
         try {
-            const res = await axios.get(`http://localhost:5050/referrals/patient/${patient.id}`, { 
+            const res = await axios.get(`${baseUrl}/referrals/patient/${patient.id}`, { 
                 headers: { Authorization: `Bearer ${token}` },
             });
             setReferralHistory(res.data);
@@ -214,7 +215,7 @@ const handleUpdatePatient = async (e: React.FormEvent) => {
       return;
     }
     const res = await axios.put(
-      `http://localhost:5050/patients/${patient.id}`,
+      `${baseUrl}/patients/${patient.id}`,
       form,
       {
         headers: {
@@ -245,7 +246,7 @@ const handleUpdateExam = async (e: React.FormEvent) => {
   try {
     const token = localStorage.getItem("token");
     const response = await axios.put(
-      `http://localhost:5050/patients/examinations/${latestExam.id}`,
+      `${baseUrl}/patients/examinations/${latestExam.id}`,
       examForm,
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -288,7 +289,7 @@ await Promise.all(
   findingsForm.map((f) => {
     console.log("Sending finding update:", f.id, { type: f.type, finding: f.finding });
     return axios.put(
-      `http://localhost:5050/patients/examination_findings/${f.id}`,
+      `${baseUrl}/patients/examination_findings/${f.id}`,
       { type: f.type, finding: f.finding },
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -325,7 +326,7 @@ const handleUpdateDiagnoses = async (e: React.FormEvent) => {
     await Promise.all(
       diagnosisForm.map((d) => {
         return axios.put(
-          `http://localhost:5050/patients/diagnoses/${d.id}`,
+          `${baseUrl}/patients/diagnoses/${d.id}`,
           {
             diagnosis: d.diagnosis,
             plan: d.plan,
@@ -373,7 +374,7 @@ const handleAddFinding = async (e: React.FormEvent) => {
     };
 
     const res = await axios.post(
-      `http://localhost:5050/patients/${patient.id}/findings`,
+      `${baseUrl}/patients/${patient.id}/findings`,
       payload, // <-- Send the new, complete payload
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -418,7 +419,7 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
 
     // 🛑 API CALL: Use the new, consistent nested path
     const res = await axios.post(
-      `http://localhost:5050/patients/${patient.id}/diagnoses`,
+      `${baseUrl}/patients/${patient.id}/diagnoses`,
       payload, 
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -484,7 +485,7 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
       }
       
       const res = await axios.post(
-        "http://localhost:5050/referrals",
+        `${baseUrl}/referrals`,
         referralData,
         {
           headers: {

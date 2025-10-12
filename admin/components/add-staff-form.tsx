@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Mail, Lock, CheckCircle, XCircle, User, Phone } from "lucide-react";
-
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 export function AddStaffForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -35,7 +35,7 @@ export function AddStaffForm() {
     }
 
     try {
-      const response = await fetch("http://localhost:5050/users/add-staff", {
+      const response = await fetch(`${baseUrl}/users/add-staff`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -24,6 +24,7 @@ interface EditModalProps {
   onSave: (id: string, updatedData: { name: string; phone: string }) => Promise<void>;
 }
 
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 function EditDoctorModal({ doctor, isOpen, onClose, onSave }: EditModalProps) { // 🛑 RENAMED COMPONENT/PROP
   const [name, setName] = useState(doctor.name);
   const [phone, setPhone] = useState(doctor.phone);
@@ -167,7 +168,7 @@ export function DoctorTable() { // 🛑 RENAMED COMPONENT
 
     try {
       // 🛑 KEY CHANGE: Targeting the new /users/doctors endpoint
-      const response = await fetch("http://localhost:5050/users/doctors", {
+      const response = await fetch(`${baseUrl}/users/doctors`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -210,7 +211,7 @@ export function DoctorTable() { // 🛑 RENAMED COMPONENT
     }
 
     // 🛑 KEY CHANGE: Targeting the new /users/doctors/:id endpoint
-    const response = await fetch(`http://localhost:5050/users/doctors/${doctorId}`, {
+    const response = await fetch(`${baseUrl}/users/doctors/${doctorId}`, {
       method: "PUT",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -253,7 +254,7 @@ export function DoctorTable() { // 🛑 RENAMED COMPONENT
 
     try {
       // 🛑 KEY CHANGE: Targeting the new /users/doctors/:id DELETE endpoint
-      const response = await fetch(`http://localhost:5050/users/doctors/${doctorId}`, {
+      const response = await fetch(`${baseUrl}/users/doctors/${doctorId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`,

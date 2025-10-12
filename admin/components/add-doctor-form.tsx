@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Mail, Lock, CheckCircle, XCircle, User, Phone, Stethoscope } from "lucide-react";
 
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export function AddDoctorForm({ onSuccessfulSubmit }: { onSuccessfulSubmit: () => void }) { // 🛑 RENAME + Added optional callback
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -36,7 +38,7 @@ export function AddDoctorForm({ onSuccessfulSubmit }: { onSuccessfulSubmit: () =
 
     try {
       // 🛑 KEY CHANGE: Targeting the new /users/add-doctor endpoint
-      const response = await fetch("http://localhost:5050/users/add-doctor", {
+      const response = await fetch(`${baseUrl}/users/add-doctor`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

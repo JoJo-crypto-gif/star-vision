@@ -1,0 +1,105 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.diagnoses (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  exam_id uuid,
+  diagnosis text NOT NULL,
+  plan text,
+  category text,
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT diagnoses_pkey PRIMARY KEY (id),
+  CONSTRAINT diagnoses_exam_id_fkey FOREIGN KEY (exam_id) REFERENCES public.examinations(id)
+);
+CREATE TABLE public.examination_findings (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  exam_id uuid,
+  type text,
+  finding text,
+  updated_at timestamp with time zone,
+  CONSTRAINT examination_findings_pkey PRIMARY KEY (id),
+  CONSTRAINT examination_findings_exam_id_fkey FOREIGN KEY (exam_id) REFERENCES public.examinations(id)
+);
+CREATE TABLE public.examinations (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  patient_id uuid,
+  staff_id uuid,
+  visual_acuity_left text,
+  visual_acuity_right text,
+  pinhole_left text,
+  pinhole_right text,
+  auto_refraction_left_sphere numeric,
+  auto_refraction_left_cylinder numeric,
+  auto_refraction_left_axis numeric,
+  auto_refraction_right_sphere numeric,
+  auto_refraction_right_cylinder numeric,
+  auto_refraction_right_axis numeric,
+  chief_complaint text,
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  subjective_refraction_left_sphere numeric,
+  subjective_refraction_left_cylinder numeric,
+  subjective_refraction_left_axis integer,
+  subjective_refraction_right_sphere numeric,
+  subjective_refraction_right_cylinder numeric,
+  subjective_refraction_right_axis integer,
+  CONSTRAINT examinations_pkey PRIMARY KEY (id),
+  CONSTRAINT examinations_patient_id_fkey FOREIGN KEY (patient_id) REFERENCES public.patients(id),
+  CONSTRAINT examinations_staff_id_fkey FOREIGN KEY (staff_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.patients (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  contact text,
+  gender text CHECK (gender = ANY (ARRAY['Male'::text, 'Female'::text, 'Other'::text])),
+  venue text NOT NULL,
+  guarantor_name text,
+  guarantor_contact text,
+  profile_picture text,
+  appointment_date date,
+  created_at timestamp without time zone DEFAULT now(),
+  staff_id uuid,
+  appointment_for text,
+  updated_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT patients_pkey PRIMARY KEY (id),
+  CONSTRAINT patients_staff_id_fkey FOREIGN KEY (staff_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.payments (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  patient_id uuid,
+  item text,
+  amount numeric NOT NULL,
+  status text DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['paid'::text, 'pending'::text])),
+  created_at timestamp without time zone DEFAULT now(),
+  category text,
+  CONSTRAINT payments_pkey PRIMARY KEY (id),
+  CONSTRAINT payments_patient_id_fkey FOREIGN KEY (patient_id) REFERENCES public.patients(id)
+);
+CREATE TABLE public.referral_clinics (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  email text NOT NULL UNIQUE,
+  CONSTRAINT referral_clinics_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.referrals (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  patient_id uuid,
+  clinic_id uuid,
+  remark text,
+  referred_at timestamp with time zone DEFAULT now(),
+  referring_doctor_id uuid,
+  CONSTRAINT referrals_pkey PRIMARY KEY (id),
+  CONSTRAINT referrals_patient_id_fkey FOREIGN KEY (patient_id) REFERENCES public.patients(id),
+  CONSTRAINT referrals_clinic_id_fkey FOREIGN KEY (clinic_id) REFERENCES public.referral_clinics(id),
+  CONSTRAINT fk_referring_doctor FOREIGN KEY (referring_doctor_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.users (
+  id uuid NOT NULL,
+  role text NOT NULL DEFAULT 'staff'::text CHECK (role = ANY (ARRAY['admin'::text, 'staff'::text, 'doctor'::text])),
+  name text,
+  phone text,
+  CONSTRAINT users_pkey PRIMARY KEY (id),
+  CONSTRAINT users_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+);
+
+KingOfHosts($)

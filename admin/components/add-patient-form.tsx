@@ -23,7 +23,7 @@ import { addPatientSchema } from "@/components/schema/patient-schemas";
 
 // Define the expected shape of the schema manually since the original schema is complex
 type AddPatientData = z.infer<typeof addPatientSchema>;
-
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 export function AddPatientForm() {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -135,7 +135,7 @@ const onSubmit = async (data: AddPatientData) => {
 
   try {
     // 1. Add patient & examination (Backend handles both)
-    const patientResponse = await fetch("http://localhost:5050/patients", {
+    const patientResponse = await fetch(`${baseUrl}/patients`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -28,7 +28,7 @@ interface Clinic {
   id: string;
   name: string;
 }
-
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 export function AddReferralForm() {
   const { control } = useFormContext();
   const [clinics, setClinics] = useState<Clinic[]>([]);
@@ -48,7 +48,7 @@ export function AddReferralForm() {
       try {
         // ✅ Fix: fetch clinics, not referrals
         const response = await axios.get<Clinic[]>(
-          "http://localhost:5050/referrals/clinics",
+          `${baseUrl}/referrals/clinics`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
