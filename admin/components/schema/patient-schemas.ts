@@ -7,6 +7,7 @@ export const addPatientSchema = z.object({
   name: z.string().min(2, { message: "Name is required." }),
   contact: z.string().min(10, { message: "Contact must be at least 10 characters." }),
   gender: z.string().nonempty({ message: "Gender is required." }),
+  age: z.preprocess(val => Number(val), z.number().optional()),
   venue: z.string().nonempty({ message: "Venue is required." }),
   guarantor_name: z.string().optional().or(z.literal("")),
   guarantor_contact: z.string().optional().or(z.literal("")),

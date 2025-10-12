@@ -12,6 +12,7 @@ const patientRoutes = (supabase, supabaseAdmin) => {
       name,
       contact,
       gender,
+      age,
       venue,
       guarantor_name,
       guarantor_contact,
@@ -52,6 +53,7 @@ const patientRoutes = (supabase, supabaseAdmin) => {
             name,
             contact,
             gender,
+            age,
             venue,
             guarantor_name,
             guarantor_contact,
@@ -75,48 +77,61 @@ const patientRoutes = (supabase, supabaseAdmin) => {
           .catch((err) => console.error("❌ WhatsApp error:", err?.message || err));
       }
 
-      // 2) Create exam
-      const { data: exam, error: eErr } = await supabase
-        .from("examinations")
-        .insert([
-          {
-            patient_id: patient.id,
-            staff_id,
-            visual_acuity_left,
-            visual_acuity_right,
-            pinhole_left,
-            pinhole_right,
-            auto_refraction_left_sphere,
-            auto_refraction_left_cylinder,
-            auto_refraction_left_axis,
-            auto_refraction_right_sphere,
-            auto_refraction_right_cylinder,
-            auto_refraction_right_axis,
+      // 2) Create exam only if any exam data provided
+const examFields = {
+  patient_id: patient.id,
+  staff_id,
+  visual_acuity_left,
+  visual_acuity_right,
+  pinhole_left,
+  pinhole_right,
+  auto_refraction_left_sphere,
+  auto_refraction_left_cylinder,
+  auto_refraction_left_axis,
+  auto_refraction_right_sphere,
+  auto_refraction_right_cylinder,
+  auto_refraction_right_axis,
+  subjective_refraction_left_sphere,
+  subjective_refraction_left_cylinder,
+  subjective_refraction_left_axis,
+  subjective_refraction_right_sphere,
+  subjective_refraction_right_cylinder,
+  subjective_refraction_right_axis,
+  chief_complaint,
+};
 
-            // -- NEW SUBJECTIVE REFRACTION FIELDS --
-            subjective_refraction_left_sphere,
-            subjective_refraction_left_cylinder,
-            subjective_refraction_left_axis,
-            subjective_refraction_right_sphere,
-            subjective_refraction_right_cylinder,
-            subjective_refraction_right_axis,
-            chief_complaint,
-          },
-        ])
-        .select()
-        .single();
+// Check if exam contains ANY real values (ignore empty / null / undefined)
+const hasExamData = Object.values(examFields).some(
+  (v) => v !== undefined && v !== null && v !== ""
+);
 
-      if (eErr) {
-        console.error("❌ Exam insert error:", eErr.message);
-        return res.status(400).json({ error: eErr.message });
-      }
-      console.log("✅ Exam created:", exam?.id);
+let exam = null;
+if (hasExamData) {
+  console.log("➡️ Exam data detected — creating exam");
+  const { data, error: eErr } = await supabase
+    .from("examinations")
+    .insert([examFields])
+    .select()
+    .single();
 
-      return res.json({
-        message: "Patient and Examination registered successfully",
-        patient,
-        exam,
-      });
+  if (eErr) {
+    console.error("❌ Exam insert error:", eErr.message);
+    return res.status(400).json({ error: eErr.message });
+  }
+  exam = data;
+  console.log("✅ Exam created:", exam?.id);
+} else {
+  console.log("⚠️ No exam data provided — skipping exam creation");
+}
+
+return res.json({
+  message: hasExamData
+    ? "Patient and Examination registered successfully"
+    : "Patient registered successfully (No exam data provided)",
+  patient,
+  exam,
+});
+
     } catch (err) {
       console.error("🔥 POST /patients error:", err?.message || err);
       return res.status(500).json({ error: err?.message || "Server error" });
