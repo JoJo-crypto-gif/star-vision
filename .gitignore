@@ -1,4 +1,4 @@
-# Ignore all environment files
+# Environment variables
 .env
 backend/.env
 admin/.env
