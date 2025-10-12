@@ -123,7 +123,7 @@ export function AdminDashboard() {
     setError(null);
 
     try {
-      const response = await fetch("${baseUrl}/patients", {
+      const response = await fetch(`${baseUrl}/patients`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
