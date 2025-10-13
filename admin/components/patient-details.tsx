@@ -29,6 +29,7 @@ interface PatientDetailsProps {
       name: string;
       contact: string;
       gender: string;
+      age: string;
       venue: string;
       guarantor_name: string;
       guarantor_contact: string;
@@ -538,6 +539,10 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
               <div>
                 <p className="font-medium">Gender</p>
                 <p className="text-sm text-muted-foreground">{patient.gender}</p>
+              </div>
+                <div>
+                <p className="font-medium">Age</p>
+                <p className="text-sm text-muted-foreground">{patient.age}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
