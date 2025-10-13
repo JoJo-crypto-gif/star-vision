@@ -309,63 +309,78 @@ router.put("/:id", checkStaff(supabaseAdmin), async (req, res) => {
 
 // PUT /examinations/:id - Edit examination
 router.put("/examinations/:id", checkStaff(supabaseAdmin), async (req, res) => {
-  const { id } = req.params;
-  const {
-    visual_acuity_left,
-    visual_acuity_right,
-    pinhole_left,
-    pinhole_right,
-    auto_refraction_left_sphere,
-    auto_refraction_left_cylinder,
-    auto_refraction_left_axis,
-    auto_refraction_right_sphere,
-    auto_refraction_right_cylinder,
-    auto_refraction_right_axis,
-    subjective_refraction_left_sphere,
-    subjective_refraction_left_cylinder,
-    subjective_refraction_left_axis,
-    subjective_refraction_right_sphere,
-    subjective_refraction_right_cylinder,
-    subjective_refraction_right_axis,
-    // -------------------------------------
-    chief_complaint
-  } = req.body;
+  // STEP 1: Define the essential utility function here
+  // Utility: convert "" or undefined to null for numeric fields
+  const cleanNumeric = (value) => {
+    return value === "" || value === undefined ? null : value;
+  };
 
-  try {
-    const { data, error } = await supabase
-      .from("examinations")
-      .update({
-        visual_acuity_left,
-        visual_acuity_right,
-        pinhole_left,
-        pinhole_right,
-        auto_refraction_left_sphere,
-        auto_refraction_left_cylinder,
-        auto_refraction_left_axis,
-        auto_refraction_right_sphere,
-        auto_refraction_right_cylinder,
-        auto_refraction_right_axis,
-        subjective_refraction_left_sphere,
-        subjective_refraction_left_cylinder,
-        subjective_refraction_left_axis,
-        subjective_refraction_right_sphere,
-        subjective_refraction_right_cylinder,
-        subjective_refraction_right_axis,
-        // -------------------------------------------
-        chief_complaint,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .select()
-      .single();
+  const { id } = req.params;
+  const {
+    visual_acuity_left,
+    visual_acuity_right,
+    pinhole_left,
+    pinhole_right,
+    auto_refraction_left_sphere,
+    auto_refraction_left_cylinder,
+    auto_refraction_left_axis,
+    auto_refraction_right_sphere,
+    auto_refraction_right_cylinder,
+    auto_refraction_right_axis,
+    subjective_refraction_left_sphere,
+    subjective_refraction_left_cylinder,
+    subjective_refraction_left_axis,
+    subjective_refraction_right_sphere,
+    subjective_refraction_right_cylinder,
+    subjective_refraction_right_axis,
+    chief_complaint
+  } = req.body;
 
-    if (error) return res.status(400).json({ error: error.message });
-    if (!data) return res.status(404).json({ error: "Examination not found" });
+  try {
+    // STEP 2: Apply cleanNumeric to all numeric fields in the update object
+    const { data, error } = await supabase
+      .from("examinations")
+      .update({
+        // The two acuity fields are likely strings, so we leave them as is
+        visual_acuity_left,
+        visual_acuity_right,
+        pinhole_left, // Also likely a string, but if numeric, clean it!
+        pinhole_right, // Also likely a string, but if numeric, clean it!
 
-    res.json({ message: "Examination updated", exam: data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+        // ✅ CLEANED NUMERIC FIELDS (Auto-Refraction)
+        auto_refraction_left_sphere: cleanNumeric(auto_refraction_left_sphere),
+        auto_refraction_left_cylinder: cleanNumeric(auto_refraction_left_cylinder),
+        auto_refraction_left_axis: cleanNumeric(auto_refraction_left_axis),
+        auto_refraction_right_sphere: cleanNumeric(auto_refraction_right_sphere),
+        auto_refraction_right_cylinder: cleanNumeric(auto_refraction_right_cylinder),
+        auto_refraction_right_axis: cleanNumeric(auto_refraction_right_axis),
+
+        // ✅ CLEANED NUMERIC FIELDS (Subjective Refraction)
+        subjective_refraction_left_sphere: cleanNumeric(subjective_refraction_left_sphere),
+        subjective_refraction_left_cylinder: cleanNumeric(subjective_refraction_left_cylinder),
+        subjective_refraction_left_axis: cleanNumeric(subjective_refraction_left_axis),
+        subjective_refraction_right_sphere: cleanNumeric(subjective_refraction_right_sphere),
+        subjective_refraction_right_cylinder: cleanNumeric(subjective_refraction_right_cylinder),
+        subjective_refraction_right_axis: cleanNumeric(subjective_refraction_right_axis),
+        
+        chief_complaint,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("❌ Exam update error:", error.message);
+      return res.status(400).json({ error: error.message });
+    }
+    if (!data) return res.status(404).json({ error: "Examination not found" });
+
+    res.json({ message: "Examination updated", exam: data });
+  } catch (err) {
+    console.error("🔥 PUT /examinations/:id error:", err?.message || err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 
