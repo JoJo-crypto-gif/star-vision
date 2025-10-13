@@ -65,6 +65,7 @@ export function AddPatientDetailsForm() {
           )}
         </div>
       </div>
+      <div className="grid grid-cols-2 gap-4">
 <div className="grid gap-2">
   <Label htmlFor="age">Age</Label>
   <Controller
@@ -77,6 +78,20 @@ export function AddPatientDetailsForm() {
   {errors.age && (
     <p className="text-sm text-destructive">{errors.age.message as string}</p>
   )}
+</div>
+<div className="grid gap-2">
+  <Label htmlFor="occupation">Occupation</Label>
+  <Controller
+    name="occupation"
+    control={control}
+    render={({ field }) => (
+      <Input id="occupatio" placeholder="e.g., Engineer" {...field} />
+    )}
+  />
+  {errors.occupation && (
+    <p className="text-sm text-destructive">{errors.occupation.message as string}</p>
+  )}
+</div>
 </div>
 
 

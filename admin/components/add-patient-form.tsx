@@ -37,6 +37,7 @@ export function AddPatientForm() {
       contact: "",
       gender: "Male",
       age: "",
+      occupation: "",
       venue: "",
       guarantor_name: "",
       guarantor_contact: "",

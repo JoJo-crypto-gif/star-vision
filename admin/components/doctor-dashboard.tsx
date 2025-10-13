@@ -295,7 +295,7 @@ export function DoctorDashboard() {
                   <Input type="search" placeholder="Search patients..." className="w-[200px] lg:w-[300px] pl-8" />
                 </div> */}
                 {/* 🚨 NEW: Add Patient button */}
-                <Button onClick={() => router.push("/add-patient")}>
+                <Button onClick={() => router.push("/staff/add-patient")}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add New Patient
                 </Button>

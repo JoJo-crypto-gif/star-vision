@@ -30,6 +30,7 @@ interface PatientDetailsProps {
       contact: string;
       gender: string;
       age: string;
+      occupation: string;
       venue: string;
       guarantor_name: string;
       guarantor_contact: string;
@@ -106,6 +107,7 @@ export function PatientDetails({ patientDetails: initialDetails, onBack }: Patie
     name: patient.name,
     contact: patient.contact,
     gender: patient.gender,
+    occupation: patient.occupation,
     venue: patient.venue,
     guarantor_name: patient.guarantor_name,
     guarantor_contact: patient.guarantor_contact,
@@ -466,6 +468,8 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
       name: patient.name,
       contact: patient.contact,
       gender: patient.gender,
+      age: patient.age,
+      occupation: patient.occupation,
       venue: patient.venue,
       appointment_date: patient.appointment_date,
       // You may need to fetch the appointment_for if it's not in the patient object
@@ -553,6 +557,13 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
               <div>
                 <p className="font-medium">Contact</p>
                 <p className="text-sm text-muted-foreground">{patient.contact}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <User className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="font-medium">Occupation</p>
+                <p className="text-sm text-muted-foreground">{patient.occupation ?? "N/A"}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -798,6 +809,12 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
         value={form.gender}
         onChange={handleChange}
         placeholder="Gender"
+      />
+        <Input
+        name="occupation"
+        value={form.occupation}
+        onChange={handleChange}
+        placeholder="Occupation"
       />
       <Input
         name="venue"
