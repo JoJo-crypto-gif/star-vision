@@ -34,7 +34,8 @@ interface PatientDetailsProps {
       guarantor_name: string;
       guarantor_contact: string;
       profile_picture: string;
-      appointment_date: string;
+      appointment_date: string | null; // It can be null from the backend
+      appointment_for: string | null; 
       created_at: string;
       staff: {
         id: string;
@@ -108,6 +109,8 @@ export function PatientDetails({ patientDetails: initialDetails, onBack }: Patie
     venue: patient.venue,
     guarantor_name: patient.guarantor_name,
     guarantor_contact: patient.guarantor_contact,
+    appointment_date: patient.appointment_date ?? "", 
+    appointment_for: patient.appointment_for ?? "",
   });
 
 const [showEditExam, setShowEditExam] = useState(false);
@@ -565,6 +568,16 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
               <p className="text-sm text-muted-foreground">{patient.guarantor_name ?? "N/A"}</p>
               <p className="text-sm text-muted-foreground">{patient.guarantor_contact ?? "N/A"}</p>
             </div>
+                <Separator />
+            <div>
+            <p className="font-medium mb-1">Appointment</p>
+            <p className="text-sm text-muted-foreground">
+                Date: {patient.appointment_date ? new Date(patient.appointment_date).toLocaleDateString() : "N/A"}
+            </p>
+            <p className="text-sm text-muted-foreground">
+                For: {patient.appointment_for ?? "N/A"}
+            </p>
+            </div>
           </CardContent>
           <CardFooter className="flex justify-end">
             <Button variant="outline" onClick={() => setShowEditPatient(true)}>Edit Patient</Button>
@@ -792,6 +805,8 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
         onChange={handleChange}
         placeholder="Venue"
       />
+                <Separator />
+    <p className="font-medium pt-2">Guarantor Details</p>
       <Input
         name="guarantor_name"
         value={form.guarantor_name}
@@ -804,6 +819,23 @@ const handleAddDiagnosis = async (e: React.FormEvent) => {
         onChange={handleChange}
         placeholder="Guarantor Contact"
       />
+          <Separator />
+    <p className="font-medium pt-2">Appointment Details</p>
+
+    <Input
+        name="appointment_date"
+        value={form.appointment_date}
+        onChange={handleChange}
+        placeholder="Appointment Date"
+        type="date" // Use type="date" for a date picker
+    />
+
+    <Input
+        name="appointment_for"
+        value={form.appointment_for}
+        onChange={handleChange}
+        placeholder="Appointment Reason/For"
+    />
 
       <DialogFooter>
         <Button type="submit">Save Changes</Button>
