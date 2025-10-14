@@ -168,9 +168,33 @@ const onSubmit = async (data: AddPatientData) => {
   }
 };
 
+const handleLogout = () => { 
+  localStorage.removeItem("token"); 
+  localStorage.removeItem("user"); 
+  localStorage.removeItem("role"); 
+  router.replace("/login"); 
+};
+
+const handleRoleAction = () => {
+  const role = localStorage.getItem("role");
+  if (role === "admin" || role === "doctor") {
+    router.back(); // Go to previous page
+  } else if (role === "staff") {
+    handleLogout(); // Sign out
+  }
+};
+
+
 
   return (
     <Card className="max-w-3xl mx-auto w-full">
+      <div className="flex items-center gap-4 mb-4">
+  <Button onClick={handleRoleAction} variant="destructive">
+    <ChevronLeft className="mr-2 h-4 w-4" />
+    Go Back / Logout
+  </Button>
+</div>
+
       <CardHeader>
         <CardTitle>Register New Patient</CardTitle>
       </CardHeader>

@@ -33,8 +33,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, RefreshCcw } from "lucide-react";
 import { DoctorTable } from "./doctor-table";
 
-// 🚨 NEW: Patient and PatientDetails interfaces
-// This interface now includes all the necessary properties
+//Patient and PatientDetails interfaces
 interface Patient {
   _id: string;
   id: string;
@@ -42,7 +41,6 @@ interface Patient {
   contact: string;
   gender: string;
   venue: string;
-  // Let's add the appointment time
   time: string;
   appointment_date: string;
   created_at: string;
@@ -181,7 +179,6 @@ export function AdminDashboard() {
     router.replace("/login");
   };
 
-  // 🚨 REPLACED: `handleRowClick` to handle patient rows
   const handleRowClick = (id: string) => {
     setSelectedPatientId(id);
     setActiveTab("details");
@@ -191,7 +188,6 @@ export function AdminDashboard() {
     }
   };
 
-  // 🚨 REPLACED: `handleBackToList` to go back to the patient list
   const handleBackToList = () => {
     setSelectedPatientId(null);
     setPatientDetails(null);
@@ -338,11 +334,6 @@ export function AdminDashboard() {
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-semibold">Dashboard</h1>
               <div className="flex items-center gap-4">
-                {/* <div className="relative hidden md:block">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input type="search" placeholder="Search patients..." className="w-[200px] lg:w-[300px] pl-8" />
-                </div> */}
-                {/* 🚨 NEW: Add Patient button */}
                 <Button onClick={() => router.push("/staff/add-patient")}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add New Patient
@@ -353,7 +344,6 @@ export function AdminDashboard() {
 
           <main className="flex-1 p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              {/* 🚨 UPDATED: TabsList to not show the "Details" tab unless a patient is selected */}
               <TabsList className="grid w-full max-w-md grid-cols-6">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="calendar">Calendar</TabsTrigger>
@@ -408,7 +398,6 @@ export function AdminDashboard() {
                       ) : (
                         <>
                           <div className="text-2xl font-bold">{upcomingAppointments}</div>
-                          {/* 🚨 Note: We need more data to show next event details */}
                           <p className="text-xs text-muted-foreground">Upcoming appointments</p>
                         </>
                       )}
@@ -517,7 +506,6 @@ export function AdminDashboard() {
 
               <TabsContent value="details">
                 {selectedPatientId && patientDetails ? (
-                  // 🚨 NEW: Render PatientDetails component with fetched data
                   <PatientDetails patientDetails={patientDetails} onBack={handleBackToList} />
                 ) : (
                   <div className="text-center py-8">
