@@ -114,36 +114,36 @@ export function LoginForm() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Link href="/forgot-password" className="text-sm font-medium text-amber-600 hover:text-amber-700">
-                    Forgot password?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className="pl-10 border-gray-300 focus:border-amber-500 focus:ring-amber-500"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-1 top-1 h-8 w-8 p-0 text-gray-400"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
-                  </Button>
-                </div>
-              </div>
+<div className="space-y-2">
+  <div className="flex items-center justify-between">
+    <Label htmlFor="password">Password</Label>
+    <Link href="/forgot-password" className="text-sm font-medium text-amber-600 hover:text-amber-700">
+      Forgot password?
+    </Link>
+  </div>
+  <div className="relative">
+    <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+
+    <Input
+      id="password"
+      type={showPassword ? "text" : "password"}
+      placeholder="••••••••"
+      className="pl-10 pr-10 border-gray-300 focus:border-amber-500 focus:ring-amber-500"
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      required
+    />
+
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+    >
+      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+    </button>
+  </div>
+</div>
+
             </div>
 
             <div className="flex items-center">
