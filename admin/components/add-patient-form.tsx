@@ -175,25 +175,37 @@ const handleLogout = () => {
   router.replace("/login"); 
 };
 
-const handleRoleAction = () => {
-  const role = localStorage.getItem("role");
-  if (role === "admin" || role === "doctor") {
-    router.back(); // Go to previous page
-  } else if (role === "staff") {
-    handleLogout(); // Sign out
-  }
+const handleBack = () => {
+  router.back();
 };
 
 
 
   return (
     <Card className="max-w-3xl mx-auto w-full">
-      <div className="flex items-center gap-4 mb-4">
-  <Button onClick={handleRoleAction} variant="destructive">
-    <ChevronLeft className="mr-2 h-4 w-4" />
-    Go Back / Logout
-  </Button>
+<div className="flex items-center gap-4 mb-4">
+  {typeof window !== "undefined" && (() => {
+    const role = localStorage.getItem("role");
+
+    return (
+      <>
+        {(role === "admin" || role === "doctor") && (
+          <Button onClick={handleBack} variant="outline">
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        )}
+
+        {role === "staff" && (
+          <Button onClick={handleLogout} variant="destructive">
+            Logout
+          </Button>
+        )}
+      </>
+    );
+  })()}
 </div>
+
 
       <CardHeader>
         <CardTitle>Register New Patient</CardTitle>
