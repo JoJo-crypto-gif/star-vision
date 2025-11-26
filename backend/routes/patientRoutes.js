@@ -35,8 +35,6 @@ const patientRoutes = (supabase, supabaseAdmin) => {
     auto_refraction_right_sphere,
     auto_refraction_right_cylinder,
     auto_refraction_right_axis,
-
-    // -- NEW SUBJECTIVE REFRACTION FIELDS --
     subjective_refraction_left_sphere,
     subjective_refraction_left_cylinder,
     subjective_refraction_left_axis,
@@ -93,7 +91,6 @@ const patientRoutes = (supabase, supabaseAdmin) => {
       pinhole_left,
       pinhole_right,
 
-      // ✅ CLEAN ALL NUMERIC INSERTS
       auto_refraction_left_sphere: cleanNumeric(auto_refraction_left_sphere),
       auto_refraction_left_cylinder: cleanNumeric(auto_refraction_left_cylinder),
       auto_refraction_left_axis: cleanNumeric(auto_refraction_left_axis),
@@ -151,7 +148,7 @@ const patientRoutes = (supabase, supabaseAdmin) => {
    * GET /patients
    * Get list of all patients (basic info only)
    */
-  router.get("/", async (req, res) => {
+  router.get("/", checkStaff(supabase), async (req, res) => {
     try {
       const { data, error } = await supabase
         .from("patients")
@@ -176,7 +173,7 @@ const patientRoutes = (supabase, supabaseAdmin) => {
    * GET /patients/:id
    * Get full details of a patient (patient + exam + findings + diagnoses + payments + staff)
    */
-  router.get("/:id", async (req, res) => {
+  router.get("/:id", checkStaff(supabase), async (req, res) => {
     const { id } = req.params;
 
     try {
@@ -313,11 +310,10 @@ router.put("/:id", checkStaff(supabaseAdmin), async (req, res) => {
 
 // PUT /examinations/:id - Edit examination
 router.put("/examinations/:id", checkStaff(supabaseAdmin), async (req, res) => {
-  // STEP 1: Define the essential utility function here
-  // Utility: convert "" or undefined to null for numeric fields
-  const cleanNumeric = (value) => {
-    return value === "" || value === undefined ? null : value;
-  };
+ // STEP 1: Define the essential utility function here
+ // Utility: convert "" or undefined to null for numeric fields
+ const cleanNumeric = (value) => {
+ return value === "" || value === undefined ? null : value; };
 
   const { id } = req.params;
   const {

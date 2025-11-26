@@ -2,6 +2,7 @@
 import express from 'express';
 import { sendReferralEmail } from '../utils/email.js';
 import checkDoctor from '../middleware/checkDoctor.js'; // Middleware for authentication and role check
+import checkStaff from '../middleware/checkStaff.js'; // Import checkStaff
 
 const referralRoutes = (supabase, supabaseAdmin) => {
   const router = express.Router();
@@ -9,7 +10,7 @@ const referralRoutes = (supabase, supabaseAdmin) => {
   // ----------------------------------------------------------------------
   // POST route to add a new referral clinic
   // ----------------------------------------------------------------------
-  router.post('/add-clinic', async (req, res) => {
+  router.post('/add-clinic', checkStaff(supabase), async (req, res) => {
     const { name, email } = req.body;
 
     if (!name || !email) {
@@ -40,7 +41,7 @@ const referralRoutes = (supabase, supabaseAdmin) => {
   // ----------------------------------------------------------------------
   // PUT route to update a referral clinic
   // ----------------------------------------------------------------------
-  router.put('/clinic/:id', async (req, res) => {
+  router.put('/clinic/:id', checkStaff(supabase), async (req, res) => {
     const { id } = req.params;
     const { name, email } = req.body;
 
@@ -77,7 +78,7 @@ const referralRoutes = (supabase, supabaseAdmin) => {
   // ----------------------------------------------------------------------
   // GET route to fetch all referral clinics
   // ----------------------------------------------------------------------
-  router.get("/clinics", async (req, res) => {
+  router.get("/clinics", checkStaff(supabase), async (req, res) => {
     try {
       const { data: clinics, error } = await supabase
         .from('referral_clinics')
@@ -96,7 +97,7 @@ const referralRoutes = (supabase, supabaseAdmin) => {
   // ----------------------------------------------------------------------
   // GET route to fetch all referrals with clinic details
   // ----------------------------------------------------------------------
-  router.get("/referrals", async (req, res) => {
+  router.get("/referrals", checkStaff(supabase), async (req, res) => {
     try {
       const { data: referrals, error } = await supabase
         .from('referrals')
@@ -163,7 +164,7 @@ const referralRoutes = (supabase, supabaseAdmin) => {
       }
       
       // 3. Send the referral email
-      await sendReferralEmail(clinic.email, patientData, clinic.name); 
+      await sendReferralEmail(clinic.email, req.body, clinic.name); 
 
       return res.json({ message: 'Referral successful. Email sent.', referral });
 
@@ -176,7 +177,7 @@ const referralRoutes = (supabase, supabaseAdmin) => {
   // routes/referralRoutes.js (Add this new route)
 
   // 🛑 NEW: GET route to fetch all referrals for a specific patient
-  router.get("/patient/:patientId", async (req, res) => {
+  router.get("/patient/:patientId", checkStaff(supabase), async (req, res) => {
     const { patientId } = req.params;
 
     try {

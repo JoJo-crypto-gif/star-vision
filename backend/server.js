@@ -7,6 +7,9 @@ import { createClient } from "@supabase/supabase-js";
 import userRoutes from "./routes/userRoutes.js";
 import patientRoutes from "./routes/patientRoutes.js";
 import referralRoutes from './routes/referralRoutes.js';
+import productRoutes from './routes/productRoutes.js'; // Import productRoutes
+import paymentRoutes from './routes/paymentRoutes.js'; // Import paymentRoutes
+
 
 dotenv.config();
 console.log("🔑 Loaded ENV:", {
@@ -44,6 +47,9 @@ app.get("/", (req, res) => {
 app.use("/users", userRoutes(supabase, supabaseAdmin));
 app.use("/patients", patientRoutes(supabase, supabaseAdmin));
 app.use('/referrals', referralRoutes(supabase, supabaseAdmin));
+app.use('/products', productRoutes(supabase)); // Register productRoutes
+app.use('/payments', paymentRoutes(supabase)); // Register paymentRoutes
+
 
 
 const PORT = process.env.PORT || 5050;
